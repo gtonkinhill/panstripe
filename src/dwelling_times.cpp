@@ -3,7 +3,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// [[Rcpp::export(.dwelling_times)]]
+// [[Rcpp::export]]
 NumericMatrix dwelling_times(List tree,
                              List Q_eigen,
                              NumericMatrix Q,

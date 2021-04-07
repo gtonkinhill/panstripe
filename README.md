@@ -11,6 +11,7 @@ The goal of panplotter is to improve the post processing of bacterial pangenome 
 You can install the development version of panplotter by running
 
 ``` r
+install.packages('remotes')
 remotes::install_github("gtonkinhill/panplotter")
 ```
 

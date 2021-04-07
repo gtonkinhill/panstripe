@@ -1,0 +1,93 @@
+---
+title: "Introduction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(panplotter)
+library(ggplot2)
+```
+
+#Simulate a pangenome
+
+We first simulate a pangenome presence/absence matrix and corresponding core genome phylogeny.
+
+```{r}
+sim <- simulate_pan(rate = 1e-3)
+```
+
+#Fit gene gain/loss model
+
+We can now estimate the expected number of gene gain and loss events along each branch of the phylogeny and fit a tweedie regression model.
+
+```{r}
+res <- fit_tweedie(sim$pa, sim$tree)
+```
+
+#Investigate results
+
+We can test whether the expected gene gain/loss rate is significantly different from a model consisting of just errors by looking at the p-value of the fit.
+
+```{r}
+res$model_fit
+```
+
+Here the association between the `core` branch length and gene gain/loss events was found to have a p-value of `r format(res$model_fit$p.value[[2]], digits=3)`.
+
+
+We can also generate a plot of the resulting fit with confidence intervals generated via bootstrap sampling of the phylogeny branches.
+
+```{r}
+ggplot(res$fit_data, aes(x=core, y=mean)) +
+  geom_line() +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.3) +
+  geom_point(data = res$points, aes(y=acc)) +
+  xlab('core phylogentic branch distance') +
+  ylab('estimated accessory distance on branch') +
+  theme_bw(base_size = 14)
+```
+
+#Comparing pangenomes
+
+For simplicity we consider a comparison with a simulated closed pangenome. This could reflect a species with a very stable set of genes such as *M. tuberculosis*.
+
+```{r}
+sim_closed <- simulate_pan(rate = 0)
+```
+
+Again we fit the a tweedie regression model after first estimating the gene gain/loss events per branch.
+
+```{r}
+res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree)
+```
+
+We can now test to see whether the choice of pangenome (open or closed) is significant.
+
+```{r}
+compare_pangenomes(res, res_closed)
+```
+
+Then `tukey` table is estimated using Tukey's ‘Honest Significant Difference’ method. Additional pangenomes can be passed to the function to test if any are significantly different. Below we cheat a little and compate the same model to itself.
+
+```{r}
+compare_pangenomes(res, res_closed, res)
+```
+
+We can also plot the difference between the fits.
+
+```{r}
+plot_pangenome_fits(res, ...)
+```

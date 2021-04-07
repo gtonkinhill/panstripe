@@ -3,7 +3,7 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// [[Rcpp::export(.fractional_likelihoods)]]
+// [[Rcpp::export]]
 List fractional_likelihoods(NumericMatrix edges, 
                              NumericMatrix states,
                              NumericVector prior,

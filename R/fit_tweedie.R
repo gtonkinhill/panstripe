@@ -64,7 +64,7 @@ fit_tweedie <- function(pa, tree, nboot=100){
     })
   })})
   
-  fit <- boot_reps %>% 
+  fit <- boot_reps %>%
     dplyr::group_by(core) %>%
     dplyr::summarise(
       mean=quantile(tmean, 0.5),

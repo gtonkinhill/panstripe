@@ -36,23 +36,23 @@ sfreemap <- function(tree, pa, type="standard", model="ER"){
   cat('Estimating expected gene gain/loss events...\n')
   for ( i in 1:ngenes ){
     tip_states <- pa[,i]
-    QP <- .Q_empirical(tree, tip_states, model)
+    QP <- Q_empirical(tree, tip_states, model)
     # calculate eigen vectors
-    Q_eigen <- base::eigen(QP$Q, TRUE, only.values = FALSE, symmetric = TRUE)
-    Q_eigen$vectors_inv <- base::solve(Q_eigen$vectors)
+    Q_eigen <- eigen(QP$Q, TRUE, only.values = FALSE, symmetric = TRUE)
+    Q_eigen$vectors_inv <- solve(Q_eigen$vectors)
     
     # build state matrix
     tip_states_matrix <- matrix(0, nrow = length(tip_states), ncol = 2)
     tip_states_matrix[cbind(1:length(tip_states), tip_states+1)] <- 1
    
     # calculate transition probabilities
-    tp <- panplotter:::.transition_probabilities(tree$edge.length, Q_eigen)
+    tp <- transition_probabilities(tree$edge.length, Q_eigen)
     
     # calculate fractional likelihoods
-    fl <- panplotter:::.fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
+    fl <- fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
     
     #calculate the dwelling times
-    dt[,i] <- rowSums(panplotter:::.dwelling_times(tree, Q_eigen, QP$Q, fl))
+    dt[,i] <- rowSums(dwelling_times(tree, Q_eigen, QP$Q, fl))
     
     cat(paste0(round(i / ngenes * 100), '% completed\r'))
     if (i == ngenes) cat('Done\n')
@@ -66,12 +66,12 @@ sfreemap <- function(tree, pa, type="standard", model="ER"){
 }
 
 
-.transition_probabilities <- function(edges, Q_eigen){
+transition_probabilities <- function(edges, Q_eigen){
   a <- exp(matrix(edges) %*% matrix(Q_eigen$values, nrow=1))
   return(purrr::map(1:nrow(a), ~ Q_eigen$vectors_inv %*% (Q_eigen$vectors * a[.x,])))
 }
 
-.Q_empirical <- function(tree, tip_states, model='ER'){
+Q_empirical <- function(tree, tip_states, model='ER'){
   
   if (model=='ER'){
     m <- matrix(c(0, 1, 1, 0), 2)
