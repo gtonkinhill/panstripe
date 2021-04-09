@@ -4,7 +4,7 @@
 \alias{compare_pangenomes}
 \title{compare_pangenomes}
 \usage{
-compare_pangenomes(resA, resB, ...)
+compare_pangenomes(resA, resB)
 }
 \arguments{
 \item{fitB}{}

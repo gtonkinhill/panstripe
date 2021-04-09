@@ -43,6 +43,7 @@ fit_tweedie <- function(pa, tree, nboot=100){
                                                        do.smooth = FALSE, method="series")}))
       # tef <- list(p.max=1.8)
       tm <- glm(acc ~ core, data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
+      stm <- summary(tm)
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100)), 
                     type="response", se.fit=TRUE)
@@ -57,7 +58,11 @@ fit_tweedie <- function(pa, tree, nboot=100){
         tmean=tp$fit,
         tpoisson.lambda=tout$poisson.lambda,
         tgamma.mean=tout$gamma.mean,
-        tgamma.phi=tout$gamma.phi
+        tgamma.phi=tout$gamma.phi,
+        model.xi=tef$p.max,
+        model.dispersion.estimate=stm$dispersion,
+        model.core.estimate=stm$coefficients[2,1],
+        model.intercept.estimate=stm$coefficients[1,1]
       )
       
 
@@ -71,10 +76,28 @@ fit_tweedie <- function(pa, tree, nboot=100){
       lower=quantile(tmean, 0.025),
       upper=quantile(tmean, 0.975))
   
+  dist_params <- boot_reps %>% 
+    dplyr::group_by(core) %>%
+    dplyr::summarise(
+      "Poisson mean"=quantile(tpoisson.lambda, 0.5),
+      "Poisson mean lower"=quantile(tpoisson.lambda, 0.025),
+      "Poisson mean upper"=quantile(tpoisson.lambda, 0.975),
+      "Gamma mean"=quantile(tgamma.mean, 0.5),
+      "Gamma mean lower"=quantile(tgamma.mean, 0.025),
+      "Gamma mean upper"=quantile(tgamma.mean, 0.975),
+      "Gamma dispersion"=quantile(tgamma.phi, 0.5),
+      "Gamma dispersion lower"=quantile(tgamma.phi, 0.025),
+      "Gamma dispersion upper"=quantile(tgamma.phi, 0.975)
+    )
+  
+  br <- boot_reps[!duplicated(boot_reps$rep), grepl('model', colnames(boot_reps))]
+  
   return(list(
     points = dat,
     model_fit = broom::tidy(m),
-    fit_data = fit)
+    fit_data = fit,
+    dist_params = dist_params,
+    boot_reps=br)
     )
   
 }

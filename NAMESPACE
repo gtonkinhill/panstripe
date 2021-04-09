@@ -3,6 +3,7 @@
 export("%>%")
 export(compare_pangenomes)
 export(fit_tweedie)
+export(plot_dist_params)
 export(plot_pangenome_fits)
 export(sfreemap)
 export(simulate_pan)

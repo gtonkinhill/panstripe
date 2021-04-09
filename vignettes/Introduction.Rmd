@@ -51,13 +51,7 @@ Here the association between the `core` branch length and gene gain/loss events 
 We can also generate a plot of the resulting fit with confidence intervals generated via bootstrap sampling of the phylogeny branches.
 
 ```{r}
-ggplot(res$fit_data, aes(x=core, y=mean)) +
-  geom_line() +
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.3) +
-  geom_point(data = res$points, aes(y=acc)) +
-  xlab('core phylogentic branch distance') +
-  ylab('estimated accessory distance on branch') +
-  theme_bw(base_size = 14)
+plot_pangenome_fits(res)
 ```
 
 #Comparing pangenomes
@@ -72,6 +66,7 @@ Again we fit the a tweedie regression model after first estimating the gene gain
 
 ```{r}
 res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree)
+res_closed$model_fit
 ```
 
 We can now test to see whether the choice of pangenome (open or closed) is significant.
@@ -80,14 +75,53 @@ We can now test to see whether the choice of pangenome (open or closed) is signi
 compare_pangenomes(res, res_closed)
 ```
 
-Then `tukey` table is estimated using Tukey's ‘Honest Significant Difference’ method. Additional pangenomes can be passed to the function to test if any are significantly different. Below we cheat a little and compate the same model to itself.
-
-```{r}
-compare_pangenomes(res, res_closed, res)
-```
-
 We can also plot the difference between the fits.
 
 ```{r}
-plot_pangenome_fits(res, ...)
+plot_pangenome_fits(list(
+  open=res, 
+  closed=res_closed))
 ```
+
+#Investigate differences in the average size of gene gain/loss events
+
+Sometimes we would like to know if it is the size rather than the rate of recombination events that is driving an apparent different in the rate of gene gain/loss. As we are fitting a tweedie regression model it is possible to tease apart the driving force of apparent accessory rate differences.
+
+
+###Simulate
+
+First lets simulate and fit two pangenomes. One with a larger average recombination size (in number of genes).
+
+```{r}
+sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 2)
+sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 10)
+
+res_small_rec <- fit_tweedie(sim_small_rec$pa, sim_small_rec$tree)
+res_large_rec <- fit_tweedie(sim_large_rec$pa, sim_large_rec$tree)
+```
+
+We can first test whether the overall rate of gene gain/loss is different between the two pangenomes.
+
+```{r}
+comp <- compare_pangenomes(res_small_rec, res_large_rec)
+comp
+```
+
+As expected given the large difference in the average size of gene gain/loss events there is a significant difference in the total rate between the two pangenomes (p=`r comp$aov$p.value[[2]]`).
+
+We can now look closer into what is driving this difference.
+
+```{r}
+plot_pangenome_fits(list(
+  large=res_large_rec, 
+  small=res_small_rec))
+```
+
+We can look at how the estimated parameters for the Gamma and Poisson distributions vary with the core branch distance.
+
+```{r}
+plot_dist_params(list(
+  large=res_large_rec, 
+  small=res_small_rec))
+```
+

@@ -17,7 +17,8 @@ Imports:
     tibble,
     statmod,
     dplyr,
-    magrittr
+    magrittr,
+    broom
 LinkingTo: Rcpp
 Suggests: 
     knitr,
