@@ -18,7 +18,7 @@
 #' @export
 plot_pangenome_fits <- function(res, plot=TRUE){
   
-  if ((length(res)==3) & all(names(res)==c("points","model_fit","fit_data", "dist_params", "boot_reps"))){
+  if ((length(res)==5) & all(names(res)==c("points","model_fit","fit_data", "dist_params", "boot_reps"))){
     res <- list(pangeome=res)
   }
   

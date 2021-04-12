@@ -18,7 +18,10 @@ Imports:
     statmod,
     dplyr,
     magrittr,
-    broom
+    broom,
+    Rtsne,
+    ggtree,
+    patchwork
 LinkingTo: Rcpp
 Suggests: 
     knitr,
