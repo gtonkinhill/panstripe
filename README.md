@@ -4,7 +4,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of panplotter is to improve the post processing of bacterial pangenome analyses. In particular it aims to replace the dubious but popular pangenome accumulation curves.
+The goal of panplotter is to improve the post processing of bacterial pangenome analyses. In particular it aims to replace the dubious but popular pangenome accumulation curve.
 
 ## Installation
 
