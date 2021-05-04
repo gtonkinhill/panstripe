@@ -47,7 +47,7 @@ fit_tweedie <- function(pa, tree, nboot=100){
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100)), 
                     type="response", se.fit=TRUE)
-      tout <- tweedie::tweedie.convert(xi=tef$p.max, mu=tp$fit, phi=tp$residual.scale^2)
+      tout <- convert_tweedie(xi=tef$p.max, mu=tp$fit, phi=stm$dispersion)
       
       cat(paste0(round(.x / nboot * 100), '% completed\r'))
       if (.x == nboot) cat('Done\n')
@@ -97,7 +97,17 @@ fit_tweedie <- function(pa, tree, nboot=100){
     model_fit = broom::tidy(m),
     fit_data = fit,
     dist_params = dist_params,
-    boot_reps=br)
+    boot_reps=br,
+    anc=sf)
     )
   
+}
+
+
+convert_tweedie <- function(xi, mu, phi){
+  return(list(
+    poisson.lambda=(mu^(2-xi))/(phi*(2-xi)),
+    gamma.mean=(2-xi)*phi*(mu^(xi-1)),
+    gamma.phi=(2-xi)*(xi-1)*(phi^2)*(mu^2)*(xi-1)
+  ))
 }

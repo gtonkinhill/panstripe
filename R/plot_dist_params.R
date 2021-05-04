@@ -18,12 +18,12 @@
 #' @export
 plot_dist_params <- function(res, plot=TRUE){
   
-  if ((length(res)==5) & all(names(res)==c("points","model_fit","fit_data", "dist_params","boot_reps"))){
+  if ((length(res)==6) & all(names(res)==c("points","model_fit","fit_data", "dist_params","boot_reps", "anc"))){
     res <- list(pangeome=res)
   }
   
   dist_dat <- purrr::imap_dfr(res, ~{
-    stopifnot(all(names(.x)==c("points","model_fit","fit_data", "dist_params","boot_reps")))
+    stopifnot(all(names(.x)==c("points","model_fit","fit_data", "dist_params","boot_reps", "anc")))
     .x <- .x$dist_params
     .x <- rbind(
       tibble::tibble(

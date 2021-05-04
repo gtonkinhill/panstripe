@@ -2,6 +2,8 @@
 
 #include <Rcpp.h>
 using namespace Rcpp;
+#include <cmath>
+#include "log_add_sub.h"
 
 // [[Rcpp::export]]
 List fractional_likelihoods(NumericMatrix edges, 
@@ -17,12 +19,15 @@ List fractional_likelihoods(NumericMatrix edges,
   int n_nodes = n_edges+1;
   
   NumericMatrix g(n_nodes, n_states);
+  std::fill(g.begin(), g.end(), -std::numeric_limits<double>::infinity());
   NumericMatrix s(n_nodes, n_states);
+  std::fill(s.begin(), s.end(), -std::numeric_limits<double>::infinity());
   NumericMatrix f(n_nodes, n_states);
+  std::fill(f.begin(), f.end(), -std::numeric_limits<double>::infinity());
   
   // Initialize f
   for (i=0; i<states.nrow(); i++) {
-    f.row(i) = states.row(i);
+    f.row(i) = log(states.row(i));
   }
   
   // calculate f and s
@@ -36,20 +41,20 @@ List fractional_likelihoods(NumericMatrix edges,
     
     for (i=0; i<n_states; i++){
       for (j=0; j<n_states; j++){
-        s(r,i) += f(r,j) * rm(i,j);
-        s(l,i) += f(l,j) * lm(i,j);
+        s(r,i) = log_sum_exp(s(r,i), f(r,j) + log(rm(i,j)));
+        s(l,i) = log_sum_exp(s(l,i), f(l,j) + log(lm(i,j)));
       }
-      f(p,i) = s(r,i) * s(l,i);
+      f(p,i) = s(r,i) + s(l,i);
     }
   }
   
   // calculate the likelihood
   int root_node = edges(n_edges-1,0)-1;
-  double likelihood = 0;
+  double likelihood = -std::numeric_limits<double>::infinity();
   for (i=0; i<n_states; i++){
-    likelihood += f(root_node, i) * prior(i);
+    likelihood = log_sum_exp(likelihood, f(root_node, i) + log(prior(i)));
   }
-  g.row(root_node) = prior;
+  g.row(root_node) = log(prior);
   
   // calculate g
   for (e=n_edges-1; e>=1; e-=2){
@@ -62,8 +67,8 @@ List fractional_likelihoods(NumericMatrix edges,
     
     for (i=0; i<n_states; i++){
       for (j=0; j<n_states; j++){
-        g(l,i) += g(p,j) * s(r,j) * lm(i,j);
-        g(r,i) += g(p,j) * s(l,j) * rm(i,j);
+        g(l,i) = log_sum_exp(g(l,i), g(p,j) + s(r,j) + log(lm(i,j)));
+        g(r,i) = log_sum_exp(g(r,i), g(p,j) + s(l,j) + log(rm(i,j)));
       }
     }
   }
@@ -84,6 +89,6 @@ prior <- c(0.5,0.5)
 tp <- array(c(0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.63,0.37,0.37,0.63,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.69,0.31,0.31,0.69), c(2,2,18))
 tp <- lapply(1:18, function(i) tp[,,i])
 
-out <- fractional_likelihoods(edges, states, prior, tp)
-stopifnot(round(out$likelihood,6)==0.000977)
+out <- panplotter:::fractional_likelihoods(edges, states, prior, tp)
+stopifnot(round(exp(out$L),6)==0.000977)
 */

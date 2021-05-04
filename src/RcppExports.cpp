@@ -6,7 +6,7 @@
 using namespace Rcpp;
 
 // dwelling_times
-NumericMatrix dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
+List dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
 RcppExport SEXP _panplotter_dwelling_times(SEXP treeSEXP, SEXP Q_eigenSEXP, SEXP QSEXP, SEXP flSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

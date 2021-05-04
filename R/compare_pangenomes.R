@@ -11,10 +11,11 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan()
-#' simB <- simulate_pan(rate=1e-3)
+#' simA <- simulate_pan(rate=1e-3)
+#' simB <- simulate_pan(rate=1e-2)
 #' resA <- fit_tweedie(simA$pa, simA$tree)
 #' resB <- fit_tweedie(simB$pa, simB$tree)
+#' plot_dist_params(list(a=resA, b=resB))
 #' comp <- compare_pangenomes(resA, resB)
 #'
 #' @export
@@ -32,11 +33,23 @@ compare_pangenomes <- function(resA, resB){
   m <- stats::glm(acc ~ core*pangenome, data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   a <- stats::aov(m)
   
+  A <- purrr::map_dfr(1:nrow(resA$boot_reps), ~{
+    convert_tweedie(xi = resA$boot_reps$model.xi[[.x]],
+                      mu = exp(resA$boot_reps$model.intercept.estimate[[.x]] + resA$boot_reps$model.core.estimate[[.x]]),
+                      phi = resA$boot_reps$model.dispersion.estimate[[.x]])
+  })
+  
+  B <- purrr::map_dfr(1:nrow(resB$boot_reps), ~{
+    convert_tweedie(xi = resB$boot_reps$model.xi[[.x]],
+                    mu = exp(resB$boot_reps$model.intercept.estimate[[.x]] + resB$boot_reps$model.core.estimate[[.x]]),
+                    phi = resB$boot_reps$model.dispersion.estimate[[.x]])
+  })
+  
   bootdf <- tibble::tibble(
-    poisA = calc_poisson_mean(resA$boot_reps),
-    poisB = calc_poisson_mean(resB$boot_reps),
-    gammaA = calc_gamma_mean(resA$boot_reps),
-    gammaB = calc_gamma_mean(resB$boot_reps)
+    poisA = A$poisson.lambda,
+    poisB = B$poisson.lambda,
+    gammaA = A$gamma.mean,
+    gammaB = B$gamma.mean
   )
   
   bootstrap_pvalues <- tibble::tibble(
@@ -61,9 +74,9 @@ calc_bootp <- function(a, b){
 }
 
 calc_poisson_mean <- function(x){
-  exp((x$model.core.estimate+x$model.intercept.estimate)*(2-x$model.xi))/(x$model.dispersion.estimate*(2-x$model.xi))
+  exp((x$model.core.estimate*0+x$model.intercept.estimate)*(2-x$model.xi))/(x$model.dispersion.estimate*(2-x$model.xi))
 }
 
 calc_gamma_mean <- function(x){
-  (x$model.xi-1)*exp((x$model.core.estimate+x$model.intercept.estimate)*(x$model.xi-1))
+  (x$model.xi-1)*exp((x$model.core.estimate*0+x$model.intercept.estimate)*(x$model.xi-1))
 }

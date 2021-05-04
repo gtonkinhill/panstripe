@@ -52,7 +52,9 @@ sfreemap <- function(tree, pa, type="standard", model="ER"){
     fl <- fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
     
     #calculate the dwelling times
-    dt[,i] <- rowSums(dwelling_times(tree, Q_eigen, QP$Q, fl))
+    # temp_prev <- panplotter:::dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp))
+    # panplotter:::dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp))
+    dt[,i] <- rowSums(dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp)))
     
     cat(paste0(round(i / ngenes * 100), '% completed\r'))
     if (i == ngenes) cat('Done\n')

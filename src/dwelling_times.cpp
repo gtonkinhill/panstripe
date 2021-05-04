@@ -4,7 +4,7 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericMatrix dwelling_times(List tree,
+List dwelling_times(List tree,
                              List Q_eigen,
                              NumericMatrix Q,
                              List fl
@@ -116,5 +116,9 @@ NumericMatrix dwelling_times(List tree,
     multiplier(s,t) = 0;
   }
   
-  return results;
+  // return results;
+  return List::create(Named("results") = results,
+                      Named("Si") = Si,
+                      Named("S") = S,
+                      Named("H") = H);
 }

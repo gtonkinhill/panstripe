@@ -81,6 +81,22 @@ We can also plot the difference between the fits.
 plot_pangenome_fits(list(
   open=res, 
   closed=res_closed))
+
+plot_dist_params(list(
+  open=res, 
+  closed=res_closed))
+
+calc_bootp(res$boot_reps$model.dispersion.estimate,
+           res_closed$boot_reps$model.dispersion.estimate)
+
+calc_bootp(res$boot_reps$model.xi,
+           res_closed$boot_reps$model.xi)
+
+calc_bootp(res$boot_reps$model.core.estimate,
+           res_closed$boot_reps$model.core.estimate)
+
+calc_bootp(res$boot_reps$model.dispersion.estimate*(2-res$boot_reps$model.xi),
+           res_closed$boot_reps$model.dispersion.estimate*(2-res_closed$boot_reps$model.xi))
 ```
 
 #Investigate differences in the average size of gene gain/loss events
