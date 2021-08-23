@@ -16,7 +16,7 @@
 #' plot_pangenome_fits(res)
 #'
 #' @export
-plot_pangenome_fits <- function(res, plot=TRUE){
+plot_pangenome_fits <- function(res, plot=TRUE, center=FALSE){
   
   if ((length(res)==6) & all(names(res)==c("points","model_fit","fit_data", "dist_params", "boot_reps", "anc"))){
     res <- list(pangeome=res)
@@ -24,6 +24,12 @@ plot_pangenome_fits <- function(res, plot=TRUE){
   
   fit_dat <- purrr::imap_dfr(res, ~{
     stopifnot(all(names(.x)==c("points","model_fit","fit_data", "dist_params", "boot_reps", "anc")))
+    if (center){
+      offset <- .x$fit_data$mean[which.min(.x$fit_data$core)]
+      .x$fit_data$mean <- .x$fit_data$mean - offset
+      .x$fit_data$lower <- .x$fit_data$lower - offset
+      .x$fit_data$upper <- .x$fit_data$upper - offset
+    }
     tibble::add_column(.x$fit_data, pangenome=.y, .before=1)
   })
   

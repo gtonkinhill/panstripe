@@ -7,12 +7,13 @@
 #' @param pa a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.
 #' @param tree a core gene phylogney of class \link{phylo}
 #' @param nboot the number of bootstrap replicates to perform (default=100)
+#' @param quiet whether to print progress information (default=FALSE)
 #'
 #' @return result
 #'
 #' @examples
 #'
-#' sim <- simulate_pan()
+#' sim <- simulate_pan(rate=1e-3,mean_trans_size=3)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -20,42 +21,80 @@
 #' 
 #'
 #' @export
-fit_tweedie <- function(pa, tree, nboot=100){
+fit_tweedie <- function(pa, tree, nboot=100, mintip=1e-3, quiet=FALSE, stochastic.mapping=TRUE){
   
   index <- which(apply(pa, 2, function(x) length(unique(x)))>1)
-  sf <- sfreemap(tree, pa = pa[,index], model = "ER")
   
-  dat <- data.frame(
-    acc=rowSums(sf$mapped.edge.lmt),
-    core=sf$edge.length
-  )
+  if (stochastic.mapping){
+    sf <- sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
+    lmt <- sf$mapped.edge.lmt
+    n <- nrow(lmt)-1
+    for (i in 1:ncol(lmt)){
+      thresh <- sort(lmt[,i],partial=n)[[n]]
+      lmt[lmt[,i]<thresh,i] <- -Inf
+    }
+    
+    dat <- data.frame(
+      acc=exp(matrixStats::rowLogSumExps(lmt)),
+      core=sf$edge.length
+    )
+  } else {
+    # use maximum parsimony
+    anc_states <- do.call(cbind, map(index, ~{
+      anc <- matrix(0, ncol = 2, nrow = length(tree$tip.label) + tree$Nnode)
+      anc[(length(tree$tip.label)+1):nrow(anc),] <- castor::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$ancestral_likelihoods
+      anc[cbind(1:length(tree$tip.label),pa[,.x]+1)] <- 1
+      return(anc[,1])
+    }))
+    pmismatch <- do.call(cbind, map(1:nrow(tree$edge), ~{(1-anc_states[tree$edge[.x,1],])*anc_states[tree$edge[.x,2],] +
+        anc_states[tree$edge[.x,1],]*(1-anc_states[tree$edge[.x,2],])}))
+    dat <- tibble(
+      acc=colSums(pmismatch),
+      core=tree$edge.length
+    )
+    
+    # anc_states <- do.call(cbind, map(index, ~{
+    #   anc <- matrix(0, ncol = 2, nrow = tree$Nnode*2+1)
+    #   anc[(tree$Nnode+2):nrow(anc),] <- ape::ace(pa[,.x], phy = tree, type = 'discrete')$lik.anc
+    #   anc[cbind(1:(tree$Nnode+1),pa[,.x]+1)] <- 1
+    #   return(anc[,1])
+    # }))
+    # pmismatch <- do.call(cbind, map(1:nrow(tree$edge), ~{(1-anc_states[tree$edge[.x,1],])*anc_states[tree$edge[.x,2],] +
+    #     anc_states[tree$edge[.x,1],]*(1-anc_states[tree$edge[.x,2],])}))
+    # dat <- tibble(
+    #   acc=colSums(pmismatch>=0.5),
+    #   core=tree$edge.length
+    # )
+  }
   
-  invisible(capture.output({ef <- tweedie::tweedie.profile(acc ~ core, data = dat, p.vec = seq(1.1,1.9,0.1),
-                                                  do.smooth = FALSE, method="series")}))
+  # dat <- dat[dat$core>minbranch & (tree$edge[,2]<=length(tree$tip.label)),]
+
+  invisible(capture.output({ef <- tweedie::tweedie.profile(acc ~ core, data = dat, p.vec = seq(1.1,2,0.1),
+                                                  do.smooth = TRUE, method="series", do.ci = TRUE)}))
 
   m <- glm(acc ~ core, data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   
-  cat('Running bootstrap...\n')
+  if (!quiet) cat('Running bootstrap...\n')
   suppressWarnings({suppressMessages({
     boot_reps <- purrr::map_dfr(1:nboot, ~{
       tdat <- dat[sample(1:nrow(dat), size = nrow(dat), replace = TRUE),]
       invisible(capture.output({tef <- tweedie::tweedie.profile(acc ~ core, data = tdat, p.vec = seq(1.1,1.9,0.1),
                                                        do.smooth = FALSE, method="series")}))
-      # tef <- list(p.max=1.8)
       tm <- glm(acc ~ core, data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
       stm <- summary(tm)
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100)), 
-                    type="response", se.fit=TRUE)
-      tout <- convert_tweedie(xi=tef$p.max, mu=tp$fit, phi=stm$dispersion)
+                    type="response")
       
-      cat(paste0(round(.x / nboot * 100), '% completed\r'))
-      if (.x == nboot) cat('Done\n')
+      tout <- convert_tweedie(xi=tef$p.max, mu=tp, phi=tef$phi.max)
+      
+      if (!quiet) cat(paste0(round(.x / nboot * 100), '% completed\r'))
+      if (!quiet & (.x == nboot)) cat('Done\n')
       
       data.frame(
-        rep=rep(.x,length(tp$fit)),
+        rep=rep(.x,length(tp)),
         core=seq(0, max(dat$core), max(dat$core)/100),
-        tmean=tp$fit,
+        tmean=tp,
         tpoisson.lambda=tout$poisson.lambda,
         tgamma.mean=tout$gamma.mean,
         tgamma.phi=tout$gamma.phi,
@@ -108,6 +147,6 @@ convert_tweedie <- function(xi, mu, phi){
   return(list(
     poisson.lambda=(mu^(2-xi))/(phi*(2-xi)),
     gamma.mean=(2-xi)*phi*(mu^(xi-1)),
-    gamma.phi=(2-xi)*(xi-1)*(phi^2)*(mu^2)*(xi-1)
+    gamma.phi=(2-xi)*(xi-1)*(phi^2)*(mu^(2*(xi-1)))
   ))
 }

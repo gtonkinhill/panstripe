@@ -20,8 +20,8 @@ Compares pangenomes using anova
 }
 \examples{
 
-simA <- simulate_pan(rate=1e-3)
-simB <- simulate_pan(rate=1e-2)
+simA <- simulate_pan(rate=1e-3, fp_error_rate=0, fn_error_rate=0)
+simB <- simulate_pan(rate=1e-2, fp_error_rate=0, fn_error_rate=0)
 resA <- fit_tweedie(simA$pa, simA$tree)
 resB <- fit_tweedie(simB$pa, simB$tree)
 plot_dist_params(list(a=resA, b=resB))

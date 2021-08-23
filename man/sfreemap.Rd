@@ -4,7 +4,7 @@
 \alias{sfreemap}
 \title{sfreemap}
 \usage{
-sfreemap(tree, pa, type = "standard", model = "ER")
+sfreemap(tree, pa, type = "standard", model = "ER", quiet = FALSE)
 }
 \arguments{
 \item{tree}{}

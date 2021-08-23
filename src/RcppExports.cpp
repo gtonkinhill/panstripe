@@ -5,8 +5,13 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // dwelling_times
-List dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
+NumericMatrix dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
 RcppExport SEXP _panplotter_dwelling_times(SEXP treeSEXP, SEXP Q_eigenSEXP, SEXP QSEXP, SEXP flSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

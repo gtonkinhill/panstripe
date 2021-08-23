@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-output: rmarkdown::html_vignette
+output: html_document
 vignette: >
   %\VignetteIndexEntry{Introduction}
   %\VignetteEncoding{UTF-8}
@@ -9,11 +9,10 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=7,
+                      echo=TRUE, warning=FALSE, message=FALSE,
+                      tidy=TRUE, collapse = TRUE, comment = "#>")
 ```
 
 ```{r setup}
@@ -34,7 +33,7 @@ sim <- simulate_pan(rate = 1e-3)
 We can now estimate the expected number of gene gain and loss events along each branch of the phylogeny and fit a tweedie regression model.
 
 ```{r}
-res <- fit_tweedie(sim$pa, sim$tree)
+res <- fit_tweedie(sim$pa, sim$tree, quiet=TRUE)
 ```
 
 #Investigate results
@@ -65,7 +64,7 @@ sim_closed <- simulate_pan(rate = 0)
 Again we fit the a tweedie regression model after first estimating the gene gain/loss events per branch.
 
 ```{r}
-res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree)
+res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree, quiet=TRUE)
 res_closed$model_fit
 ```
 
@@ -85,18 +84,6 @@ plot_pangenome_fits(list(
 plot_dist_params(list(
   open=res, 
   closed=res_closed))
-
-calc_bootp(res$boot_reps$model.dispersion.estimate,
-           res_closed$boot_reps$model.dispersion.estimate)
-
-calc_bootp(res$boot_reps$model.xi,
-           res_closed$boot_reps$model.xi)
-
-calc_bootp(res$boot_reps$model.core.estimate,
-           res_closed$boot_reps$model.core.estimate)
-
-calc_bootp(res$boot_reps$model.dispersion.estimate*(2-res$boot_reps$model.xi),
-           res_closed$boot_reps$model.dispersion.estimate*(2-res_closed$boot_reps$model.xi))
 ```
 
 #Investigate differences in the average size of gene gain/loss events
@@ -112,8 +99,8 @@ First lets simulate and fit two pangenomes. One with a larger average recombinat
 sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 2)
 sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 10)
 
-res_small_rec <- fit_tweedie(sim_small_rec$pa, sim_small_rec$tree)
-res_large_rec <- fit_tweedie(sim_large_rec$pa, sim_large_rec$tree)
+res_small_rec <- fit_tweedie(sim_small_rec$pa, sim_small_rec$tree, quiet=TRUE)
+res_large_rec <- fit_tweedie(sim_large_rec$pa, sim_large_rec$tree, quiet=TRUE)
 ```
 
 We can first test whether the overall rate of gene gain/loss is different between the two pangenomes.

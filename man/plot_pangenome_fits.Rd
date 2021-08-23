@@ -4,7 +4,7 @@
 \alias{plot_pangenome_fits}
 \title{plot_pangenome_fits}
 \usage{
-plot_pangenome_fits(res, plot = TRUE)
+plot_pangenome_fits(res, plot = TRUE, center = FALSE)
 }
 \arguments{
 \item{res}{the result of running the `fit_tweedie` function. Multiple results can be passed as a named list.}

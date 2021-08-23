@@ -2,9 +2,11 @@
 
 #include <Rcpp.h>
 using namespace Rcpp;
+#include <cmath>
+#include "log_add_sub.h"
 
 // [[Rcpp::export]]
-List dwelling_times(List tree,
+NumericMatrix dwelling_times(List tree,
                              List Q_eigen,
                              NumericMatrix Q,
                              List fl
@@ -90,7 +92,7 @@ List dwelling_times(List tree,
     }
     
     // calculate prm
-    std::fill( prm.begin(), prm.end(), 0 ) ;
+    std::fill( prm.begin(), prm.end(), -std::numeric_limits<double>::infinity()) ;
     
     for (k=0; k<n_edges; k++){
       l = edges(k,0) - 1;
@@ -104,21 +106,17 @@ List dwelling_times(List tree,
       
       for (i=0; i<n_states; i++) {
         for (j=0; j<n_states; j++) {
-          prm(k) += flG(l,i) * flS(b,i) * flF(r,j) * H(k, j + i*2);
+          prm(k) = log_sum_exp(prm(k), flG(l,i) + flS(b,i) + flF(r,j) + log(H(k, j + i*2)));
         }
       }
     }
     
     // calculate ev
     for (k=0; k<n_edges; k++){
-      results(k, s) = prm(k) / likelihood;
+      results(k, s) = prm(k) - likelihood;
     }
     multiplier(s,t) = 0;
   }
   
-  // return results;
-  return List::create(Named("results") = results,
-                      Named("Si") = Si,
-                      Named("S") = S,
-                      Named("H") = H);
+  return results;
 }

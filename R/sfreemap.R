@@ -23,7 +23,7 @@
 #' 
 #'
 #' @export
-sfreemap <- function(tree, pa, type="standard", model="ER"){
+sfreemap <- function(tree, pa, type="standard", model="ER", quiet=FALSE){
   
   # Reorder the tree so the root is the first row of the matrix.
   # We save the original order to make sure we have the result
@@ -33,10 +33,10 @@ sfreemap <- function(tree, pa, type="standard", model="ER"){
   ngenes <- ncol(pa)
   dt <- matrix(0, nrow = nrow(tree$edge), ncol = ngenes, dimnames = list(NULL, colnames(pa)))
   
-  cat('Estimating expected gene gain/loss events...\n')
+  if (!quiet) cat('Estimating expected gene gain/loss events...\n')
   for ( i in 1:ngenes ){
     tip_states <- pa[,i]
-    QP <- Q_empirical(tree, tip_states, model)
+    QP <- panplotter:::Q_empirical(tree, tip_states, model)
     # calculate eigen vectors
     Q_eigen <- eigen(QP$Q, TRUE, only.values = FALSE, symmetric = TRUE)
     Q_eigen$vectors_inv <- solve(Q_eigen$vectors)
@@ -46,18 +46,17 @@ sfreemap <- function(tree, pa, type="standard", model="ER"){
     tip_states_matrix[cbind(1:length(tip_states), tip_states+1)] <- 1
    
     # calculate transition probabilities
-    tp <- transition_probabilities(tree$edge.length, Q_eigen)
+    tp <- panplotter:::transition_probabilities(tree$edge.length, Q_eigen)
     
     # calculate fractional likelihoods
-    fl <- fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
+    fl <- panplotter:::fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
     
     #calculate the dwelling times
-    # temp_prev <- panplotter:::dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp))
-    # panplotter:::dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp))
-    dt[,i] <- rowSums(dwelling_times(tree, Q_eigen, QP$Q, purrr::map(fl, exp)))
+    dt[,i] <- matrixStats::rowLogSumExps(panplotter:::dwelling_times(tree, Q_eigen, QP$Q, fl))
+    dt[dt[,i]>0,i] <- 0 #we only consider a maximum of one change per branch
     
-    cat(paste0(round(i / ngenes * 100), '% completed\r'))
-    if (i == ngenes) cat('Done\n')
+    if (!quiet) cat(paste0(round(i / ngenes * 100), '% completed\r'))
+    if (!quiet & (i == ngenes)) cat('Done\n')
   }
   
   new_tree <- ape::reorder.phylo(tree, order='cladewise')
@@ -81,7 +80,7 @@ Q_empirical <- function(tree, tip_states, model='ER'){
     m <- matrix(c(0, 1, 2, 0), 2)
   }
   
-  fit <- ape::ace(tip_states, tree, model = m, type = 'discrete')
+  fit <- ape::ace(tip_states, tree, model = m, type = 'discrete', CI = TRUE)
   Q <- matrix(fit$rates[fit$index.matrix], 2)
   Q[c(1,4)] <- -Q[c(2,3)]
   

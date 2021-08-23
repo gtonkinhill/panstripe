@@ -21,7 +21,8 @@ Imports:
     broom,
     Rtsne,
     ggtree,
-    patchwork
+    patchwork,
+    matrixStats
 LinkingTo: Rcpp
 Suggests: 
     knitr,

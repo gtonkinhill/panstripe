@@ -53,12 +53,12 @@ plot_dist_params <- function(res, plot=TRUE){
     gg <- ggplot2::ggplot(dist_dat, aes(x=core, y=value, col=pangenome)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(aes(ymin=lower, ymax=upper, fill=pangenome), alpha=0.3) +
-      ggplot2::facet_wrap(~parameter, ncol = 2)
+      ggplot2::facet_wrap(~parameter, ncol = 2, scales = 'free_y')
   } else {
     gg <- ggplot2::ggplot(dist_dat, aes(x=core, y=value)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(aes(ymin=lower, ymax=upper), alpha=0.3) +
-      ggplot2::facet_wrap(~parameter, ncol = 2)
+      ggplot2::facet_wrap(~parameter, ncol = 2, scales = 'free_y')
   }
   
   gg <- gg + 

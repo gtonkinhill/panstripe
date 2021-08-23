@@ -37,7 +37,7 @@ simulate_pan <- function(ngenomes=50, rate=1e-5, genome_length=2000,
   data[, is_core] <- 1
   
   #model number of genes involved in each event
-  acc <- purrr::map2(is_acc, rpois(length(is_acc), lambda = mean_trans_size), ~{
+  acc <- purrr::map2(is_acc, 1+rpois(length(is_acc), lambda = mean_trans_size-1), ~{
     matrix(rep(data[,.x], .y), byrow = FALSE, ncol = .y)})
   acc <- acc[purrr::map_lgl(acc, ~ nrow(.x)>0)]
   data <- cbind(data[, is_core], 

@@ -3,6 +3,7 @@
 export("%>%")
 export(compare_pangenomes)
 export(fit_tweedie)
+export(plot_acc)
 export(plot_dist_params)
 export(plot_gain_loss)
 export(plot_pangenome_fits)
