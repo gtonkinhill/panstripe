@@ -18,13 +18,13 @@
 #' tree <- sim$tree
 #' nboot <- 100
 #' res <- fit_tweedie(sim$pa, sim$tree)
-#' 
 #'
 #' @export
-fit_tweedie <- function(pa, tree, nboot=100, mintip=1e-3, quiet=FALSE, stochastic.mapping=TRUE){
+fit_tweedie <- function(pa, tree, nboot=100, quiet=FALSE, stochastic.mapping=FALSE){
   
   index <- which(apply(pa, 2, function(x) length(unique(x)))>1)
   
+  sf <- NA
   if (stochastic.mapping){
     sf <- sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
     lmt <- sf$mapped.edge.lmt
@@ -36,7 +36,8 @@ fit_tweedie <- function(pa, tree, nboot=100, mintip=1e-3, quiet=FALSE, stochasti
     
     dat <- data.frame(
       acc=exp(matrixStats::rowLogSumExps(lmt)),
-      core=sf$edge.length
+      core=sf$edge.length,
+      istip=tree$edge[,2]<=length(tree$tip.label)
     )
   } else {
     # use maximum parsimony
@@ -50,40 +51,26 @@ fit_tweedie <- function(pa, tree, nboot=100, mintip=1e-3, quiet=FALSE, stochasti
         anc_states[tree$edge[.x,1],]*(1-anc_states[tree$edge[.x,2],])}))
     dat <- tibble(
       acc=colSums(pmismatch),
-      core=tree$edge.length
+      core=tree$edge.length,
+      istip=tree$edge[,2]<=length(tree$tip.label)
     )
-    
-    # anc_states <- do.call(cbind, map(index, ~{
-    #   anc <- matrix(0, ncol = 2, nrow = tree$Nnode*2+1)
-    #   anc[(tree$Nnode+2):nrow(anc),] <- ape::ace(pa[,.x], phy = tree, type = 'discrete')$lik.anc
-    #   anc[cbind(1:(tree$Nnode+1),pa[,.x]+1)] <- 1
-    #   return(anc[,1])
-    # }))
-    # pmismatch <- do.call(cbind, map(1:nrow(tree$edge), ~{(1-anc_states[tree$edge[.x,1],])*anc_states[tree$edge[.x,2],] +
-    #     anc_states[tree$edge[.x,1],]*(1-anc_states[tree$edge[.x,2],])}))
-    # dat <- tibble(
-    #   acc=colSums(pmismatch>=0.5),
-    #   core=tree$edge.length
-    # )
   }
-  
-  # dat <- dat[dat$core>minbranch & (tree$edge[,2]<=length(tree$tip.label)),]
 
-  invisible(capture.output({ef <- tweedie::tweedie.profile(acc ~ core, data = dat, p.vec = seq(1.1,2,0.1),
+  invisible(capture.output({ef <- tweedie::tweedie.profile(acc ~ core*istip, data = dat, p.vec = seq(1.1,2,0.1),
                                                   do.smooth = TRUE, method="series", do.ci = TRUE)}))
 
-  m <- glm(acc ~ core, data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
+  m <- glm(acc ~ core*istip, data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   
   if (!quiet) cat('Running bootstrap...\n')
   suppressWarnings({suppressMessages({
     boot_reps <- purrr::map_dfr(1:nboot, ~{
       tdat <- dat[sample(1:nrow(dat), size = nrow(dat), replace = TRUE),]
-      invisible(capture.output({tef <- tweedie::tweedie.profile(acc ~ core, data = tdat, p.vec = seq(1.1,1.9,0.1),
+      invisible(capture.output({tef <- tweedie::tweedie.profile(acc ~ core*istip, data = tdat, p.vec = seq(1.1,1.9,0.1),
                                                        do.smooth = FALSE, method="series")}))
-      tm <- glm(acc ~ core, data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
+      tm <- glm(acc ~ core*istip, data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
       stm <- summary(tm)
       tp <- predict(tm, 
-                    data.frame(core=seq(0, max(dat$core), max(dat$core)/100)), 
+                    data.frame(core=seq(0, max(dat$core), max(dat$core)/100), istip=FALSE), 
                     type="response")
       
       tout <- convert_tweedie(xi=tef$p.max, mu=tp, phi=tef$phi.max)
@@ -100,6 +87,7 @@ fit_tweedie <- function(pa, tree, nboot=100, mintip=1e-3, quiet=FALSE, stochasti
         tgamma.phi=tout$gamma.phi,
         model.xi=tef$p.max,
         model.dispersion.estimate=stm$dispersion,
+        model.tip.estimate=stm$coefficients[3,1],
         model.core.estimate=stm$coefficients[2,1],
         model.intercept.estimate=stm$coefficients[1,1]
       )

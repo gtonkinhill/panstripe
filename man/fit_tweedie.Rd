@@ -4,14 +4,7 @@
 \alias{fit_tweedie}
 \title{fit_tweedie}
 \usage{
-fit_tweedie(
-  pa,
-  tree,
-  nboot = 100,
-  mintip = 0.001,
-  quiet = FALSE,
-  stochastic.mapping = TRUE
-)
+fit_tweedie(pa, tree, nboot = 100, quiet = FALSE, stochastic.mapping = FALSE)
 }
 \arguments{
 \item{pa}{a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.}
@@ -38,6 +31,5 @@ pa <- sim$pa
 tree <- sim$tree
 nboot <- 100
 res <- fit_tweedie(sim$pa, sim$tree)
-
 
 }
