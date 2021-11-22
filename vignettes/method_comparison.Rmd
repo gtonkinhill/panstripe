@@ -1,0 +1,172 @@
+  ---
+  title: "Method comparison"
+  vignette: >
+    %\VignetteIndexEntry{Introduction}
+    %\VignetteEncoding{UTF-8}
+    %\VignetteEngine{knitr::rmarkdown}
+  editor_options: 
+    chunk_output_type: console
+  ---
+  
+  ```{r global_options, include=FALSE}
+  knitr::opts_chunk$set(fig.width=12, fig.height=7,
+                        echo=TRUE, warning=FALSE, message=FALSE,
+                        tidy=TRUE, collapse = TRUE, comment = "#>")
+  ```
+  
+  ```{r setup}
+  library(panplotter)
+  library(tidyverse)
+  library(data.table)
+  library(ape)
+  ```
+  
+  ## Simulation
+
+### Varying gain/loss rate
+
+```{r}
+rates <- c(0, 1e-4, 1e-3, 1e-2)
+names(rates) <- as.character(rates)
+sim <- map(rates, ~ simulate_pan(rate = .x, mean_trans_size = 1))
+
+plot_acc(map(sim, ~ .x$pa)) +
+  labs(colour='Gain/Loss rate', fill='Gain/Loss rate')
+ggsave("~/Documents/panplotter_manuscript/Figures/gain_loss_rate_acc.png", width = 7, height = 4)
+```
+
+### Varying size of recombination events
+
+```{r}
+rates <- c(1, 5, 10)
+names(rates) <- as.character(rates)
+sim_rec_size <- map(rates, ~ simulate_pan(rate = 1e-3, mean_trans_size = .x))
+
+plot_acc(map(sim_rec_size, ~ .x$pa)) +
+  labs(colour='Recombination size\n(# genes)', fill='Recombination size\n(# genes)')
+ggsave("~/Documents/panplotter_manuscript/Figures/recomb_size_acc.png", width = 7, height = 4)
+```
+
+### Varying error rates
+
+```{r}
+rates <- c(1, 2, 5)
+names(rates) <- as.character(rates)
+sim_error <- map(rates, ~ simulate_pan(rate = 1e-3, 
+                                          mean_trans_size = 2, 
+                                          fn_error_rate = .x,
+                                          fp_error_rate = .x))
+
+plot_acc(map(sim_error, ~ .x$pa)) +
+  labs(colour='Error rate\n(# genes)', fill='Error rate\n(# genes)')
+ggsave("~/Documents/panplotter_manuscript/Figures/error_acc.png", width = 7, height = 4)
+```
+
+### Ability to differentiate evolutionary rates
+
+```{r}
+fits_error <- map(sim_error, ~ fit_tweedie(.x$pa, .x$tree, quiet=TRUE))
+
+plot_pangenome_fits(fits_error) +
+  labs(colour='Error rate\n(# genes)', fill='Error rate\n(# genes)')
+ggsave("~/Documents/panplotter_manuscript/Figures/error_tweedie_fit.png", width = 7, height = 4)
+```
+
+```{r}
+compare_pangenomes(fits_error[[1]], fits_error[[2]])
+```
+
+```{r}
+plot_pangenome_fits(fits_error, center=TRUE) +
+  labs(colour='Error rate\n(# genes)', fill='Error rate\n(# genes)')
+ggsave("~/Documents/panplotter_manuscript/Figures/error_tweedie_fit_centred.png", width = 7, height = 4)
+```
+
+### Rate versus recombination size
+
+```{r}
+sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 2)
+sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 10)
+
+res_small_rec <- fit_tweedie(sim_small_rec$pa, sim_small_rec$tree, quiet=TRUE)
+res_large_rec <- fit_tweedie(sim_large_rec$pa, sim_large_rec$tree, quiet=TRUE)
+```
+
+```{r}
+plot_pangenome_fits(list(
+  large=res_large_rec, 
+  small=res_small_rec)) +
+  labs(colour='Recombination size', fill='Recombination size')
+ggsave("~/Documents/panplotter_manuscript/Figures/recombination_size_diff.png", width = 7, height = 4)
+```
+
+We can look at how the estimated parameters for the Gamma and Poisson distributions vary with the core branch distance.
+
+```{r}
+plot_dist_params(list(
+  large=res_large_rec, 
+  small=res_small_rec)) +
+  labs(colour='Recombination size', fill='Recombination size')
+ggsave("~/Documents/panplotter_manuscript/Figures/recombination_size_diff_deconvoluted.png", width = 7, height = 4)
+```
+
+## Open versus closes
+
+```{r}
+sim_closed <- simulate_pan(rate = 0)
+res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree, quiet=TRUE)
+res_closed$model_fit
+
+plot_pangenome_fits(list(closed=res_closed))
+ggsave("~/Documents/panplotter_manuscript/Figures/closed_pangenome_tweedie_fit.png", width = 7, height = 4)
+```
+
+
+
+
+## Mycobacterium tuberculosis
+
+An outbreak of Mtb in London. Here, we do not expect much in the way of pangenome variation as Mtb is known to evolve clonally and to have very limited accessory variation. The core genome SNP distance of these isolates is at most 9 SNPs.
+
+```{r}
+pa <- fread("~/Documents/panplotter_manuscript/data/Mtb_panaroo_gene_presence_absence.csv") %>% as_tibble()
+
+
+rpa <- fread("~/Documents/panplotter_manuscript/data/Mtb_roary_gene_presence_absence.csv") %>% as_tibble()
+rpa <- t(data.matrix(rpa[,15:ncol(rpa)]!=''))
+
+mtb_pa <- list(panaroo=pa, roary=rpa)
+
+plot_acc(mtb_pa) +
+  labs(colour='Method', fill='Method')
+ggsave("~/Documents/panplotter_manuscript/Figures/mtb_acc.png", width = 7, height = 4)
+```
+
+
+```{r}
+pa <- fread("~/Documents/panplotter_manuscript/data/Mtb_panaroo_gene_presence_absence.csv") %>% as_tibble()
+
+tree <- ape::read.tree("~/Documents/panplotter_manuscript/data/Mtb_alignment.fasta.treefile")
+tree$tip.label <- colnames(pa)[15:(15+length(tree$tip.label)-1)]
+tree <- ape::di2multi(tree, tol=0.0001)
+# tree <- ape::multi2di(tree)
+# tree$edge.length <- tree$edge.length*100
+# tree$edge.length <- pmax(tree$edge.length, 0.0001)
+
+pa <- t(data.matrix(pa[,15:(15+length(tree$tip.label)-1)]!=''))
+pa <- pa*1
+
+res_panaroo <- fit_tweedie(pa, tree, stochastic.mapping = FALSE)
+plot_pangenome_fits(res_panaroo) +
+  theme_bw(base_size = 20)
+res_panaroo$model_fit
+
+tree2 <- ape::read.tree("~/Documents/panplotter_manuscript/data/Mtb_alignment.fasta.treefile")
+tree2 <- ape::di2multi(tree2, tol=0.0001)
+ggtree::ggtree(tree2)
+```
+
+
+## Pneumococcal
+
+
