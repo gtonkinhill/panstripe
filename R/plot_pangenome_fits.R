@@ -12,21 +12,28 @@
 #' @examples
 #'
 #' sim <- simulate_pan(rate=1e-3)
-#' res <- fit_tweedie(sim$pa, sim$tree)
-#' plot_pangenome_fits(res)
+#' res <- fit_tweedie(sim$pa, sim$tree, nboot=10)
+#' plot_pangenome_fits(list(a=res,b=res), color_pallete=6)
 #'
 #' @export
-plot_pangenome_fits <- function(res, plot=TRUE, center=FALSE){
+plot_pangenome_fits <- function(res, 
+                                plot=TRUE, 
+                                center=FALSE,
+                                legend=TRUE,
+                                text_size=14,
+                                color_pallete=6){
   
-  if ((length(res)==6) & all(names(res)==c("points","model_fit","fit_data", "dist_params", "boot_reps", "anc"))){
-    res <- list(pangeome=res)
+  if (length(res)==5){
+    if (all(names(res)==c("points","model_fit","fit_data", "dist_params", "boot_reps"))){
+      res <- list(pangeome=res)
+    }
   }
   
   fit_dat <- purrr::imap_dfr(res, ~{
-    stopifnot(all(names(.x)==c("points","model_fit","fit_data", "dist_params", "boot_reps", "anc")))
+    stopifnot(all(names(.x)==c("points","model_fit","fit_data", "dist_params", "boot_reps")))
     if (center){
-      offset <- .x$fit_data$mean[which.min(.x$fit_data$core)]
-      .x$fit_data$mean <- .x$fit_data$mean - offset
+      offset <- .x$fit_data$val[which.min(.x$fit_data$core)]
+      .x$fit_data$val <- .x$fit_data$val - offset
       .x$fit_data$lower <- .x$fit_data$lower - offset
       .x$fit_data$upper <- .x$fit_data$upper - offset
     }
@@ -45,22 +52,24 @@ plot_pangenome_fits <- function(res, plot=TRUE, center=FALSE){
   }
   
   if (length(res)>1) {
-    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=core, y=mean, colour=pangenome)) +
+    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=core, y=val, colour=pangenome)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(ggplot2::aes(ymin=lower, ymax=upper, fill=pangenome), alpha=0.3) +
       ggplot2::geom_point(data = point_dat, ggplot2::aes(y=acc, colour=pangenome))
   } else {
-    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=core, y=mean)) +
+    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=core, y=val)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(ggplot2::aes(ymin=lower, ymax=upper), alpha=0.3) +
       ggplot2::geom_point(data = point_dat, ggplot2::aes(y=acc))
   }
   
   gg <- gg + 
+    ggplot2::scale_colour_brewer(type = 'qual', palette = color_pallete) +
+    ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete) +
+    ggplot2::theme_bw(base_size = text_size) +
     ggplot2::xlab('core phylogentic branch distance') +
-    ggplot2::ylab('estimated accessory distance on branch') +
-    ggplot2::theme_bw(base_size = 14)
-  
+    ggplot2::ylab('estimated accessory distance on branch')
+
   return(gg)
   
 }

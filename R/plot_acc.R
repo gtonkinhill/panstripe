@@ -55,7 +55,7 @@ plot_acc <- function(pa,
     ggplot2::scale_color_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::geom_line(size = 1) +
-    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::theme_bw(base_size = text_size) +
     ggplot2::xlab("Number of genomes") +
     ggplot2::ylab("Accessory size")
   

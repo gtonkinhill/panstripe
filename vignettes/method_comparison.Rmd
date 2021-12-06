@@ -121,9 +121,6 @@ plot_pangenome_fits(list(closed=res_closed))
 ggsave("~/Documents/panplotter_manuscript/Figures/closed_pangenome_tweedie_fit.png", width = 7, height = 4)
 ```
 
-
-
-
 ## Mycobacterium tuberculosis
 
 An outbreak of Mtb in London. Here, we do not expect much in the way of pangenome variation as Mtb is known to evolve clonally and to have very limited accessory variation. The core genome SNP distance of these isolates is at most 9 SNPs.

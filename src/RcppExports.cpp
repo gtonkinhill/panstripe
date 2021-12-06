@@ -10,9 +10,31 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// WMPR_ASR_CPP
+Rcpp::List WMPR_ASR_CPP(const long Ntips, const long Nnodes, const long Nedges, const long Nstates, const std::vector<long>& tree_edge, const std::vector<double>& edge_length, const std::vector<long>& tip_states, const std::vector<double>& transition_costs, const double branch_length_exponent, bool weight_posteriors_by_scenario_counts, bool verbose, const std::string& verbose_prefix);
+RcppExport SEXP _panstripe_WMPR_ASR_CPP(SEXP NtipsSEXP, SEXP NnodesSEXP, SEXP NedgesSEXP, SEXP NstatesSEXP, SEXP tree_edgeSEXP, SEXP edge_lengthSEXP, SEXP tip_statesSEXP, SEXP transition_costsSEXP, SEXP branch_length_exponentSEXP, SEXP weight_posteriors_by_scenario_countsSEXP, SEXP verboseSEXP, SEXP verbose_prefixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const long >::type Ntips(NtipsSEXP);
+    Rcpp::traits::input_parameter< const long >::type Nnodes(NnodesSEXP);
+    Rcpp::traits::input_parameter< const long >::type Nedges(NedgesSEXP);
+    Rcpp::traits::input_parameter< const long >::type Nstates(NstatesSEXP);
+    Rcpp::traits::input_parameter< const std::vector<long>& >::type tree_edge(tree_edgeSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type edge_length(edge_lengthSEXP);
+    Rcpp::traits::input_parameter< const std::vector<long>& >::type tip_states(tip_statesSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type transition_costs(transition_costsSEXP);
+    Rcpp::traits::input_parameter< const double >::type branch_length_exponent(branch_length_exponentSEXP);
+    Rcpp::traits::input_parameter< bool >::type weight_posteriors_by_scenario_counts(weight_posteriors_by_scenario_countsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type verbose_prefix(verbose_prefixSEXP);
+    rcpp_result_gen = Rcpp::wrap(WMPR_ASR_CPP(Ntips, Nnodes, Nedges, Nstates, tree_edge, edge_length, tip_states, transition_costs, branch_length_exponent, weight_posteriors_by_scenario_counts, verbose, verbose_prefix));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dwelling_times
 NumericMatrix dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
-RcppExport SEXP _panplotter_dwelling_times(SEXP treeSEXP, SEXP Q_eigenSEXP, SEXP QSEXP, SEXP flSEXP) {
+RcppExport SEXP _panstripe_dwelling_times(SEXP treeSEXP, SEXP Q_eigenSEXP, SEXP QSEXP, SEXP flSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -26,7 +48,7 @@ END_RCPP
 }
 // fractional_likelihoods
 List fractional_likelihoods(NumericMatrix edges, NumericMatrix states, NumericVector prior, List tp);
-RcppExport SEXP _panplotter_fractional_likelihoods(SEXP edgesSEXP, SEXP statesSEXP, SEXP priorSEXP, SEXP tpSEXP) {
+RcppExport SEXP _panstripe_fractional_likelihoods(SEXP edgesSEXP, SEXP statesSEXP, SEXP priorSEXP, SEXP tpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -40,12 +62,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_panplotter_dwelling_times", (DL_FUNC) &_panplotter_dwelling_times, 4},
-    {"_panplotter_fractional_likelihoods", (DL_FUNC) &_panplotter_fractional_likelihoods, 4},
+    {"_panstripe_WMPR_ASR_CPP", (DL_FUNC) &_panstripe_WMPR_ASR_CPP, 12},
+    {"_panstripe_dwelling_times", (DL_FUNC) &_panstripe_dwelling_times, 4},
+    {"_panstripe_fractional_likelihoods", (DL_FUNC) &_panstripe_fractional_likelihoods, 4},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_panplotter(DllInfo *dll) {
+RcppExport void R_init_panstripe(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

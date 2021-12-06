@@ -16,7 +16,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=7,
 ```
 
 ```{r setup}
-library(panplotter)
+library(panstripe)
 library(ggplot2)
 ```
 

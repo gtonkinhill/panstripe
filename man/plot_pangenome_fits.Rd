@@ -4,7 +4,14 @@
 \alias{plot_pangenome_fits}
 \title{plot_pangenome_fits}
 \usage{
-plot_pangenome_fits(res, plot = TRUE, center = FALSE)
+plot_pangenome_fits(
+  res,
+  plot = TRUE,
+  center = FALSE,
+  legend = TRUE,
+  text_size = 14,
+  color_pallete = 6
+)
 }
 \arguments{
 \item{res}{the result of running the `fit_tweedie` function. Multiple results can be passed as a named list.}
@@ -23,7 +30,7 @@ Plots the fitted pangenome tweedie regression model.
 \examples{
 
 sim <- simulate_pan(rate=1e-3)
-res <- fit_tweedie(sim$pa, sim$tree)
-plot_pangenome_fits(res)
+res <- fit_tweedie(sim$pa, sim$tree, nboot=10)
+plot_pangenome_fits(list(a=res,b=res), color_pallete=6)
 
 }

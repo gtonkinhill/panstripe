@@ -4,7 +4,15 @@
 \alias{fit_tweedie}
 \title{fit_tweedie}
 \usage{
-fit_tweedie(pa, tree, nboot = 100, quiet = FALSE, stochastic.mapping = FALSE)
+fit_tweedie(
+  pa,
+  tree,
+  nboot = 100,
+  stochastic.mapping = FALSE,
+  max_height = NA,
+  mrsd = NA,
+  quiet = FALSE
+)
 }
 \arguments{
 \item{pa}{a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.}
@@ -12,6 +20,8 @@ fit_tweedie(pa, tree, nboot = 100, quiet = FALSE, stochastic.mapping = FALSE)
 \item{tree}{a core gene phylogney of class \link{phylo}}
 
 \item{nboot}{the number of bootstrap replicates to perform (default=100)}
+
+\item{mrsd}{Most recent sampling date}
 
 \item{quiet}{whether to print progress information (default=FALSE)}
 }
@@ -26,10 +36,11 @@ Fits a tweedie...
 }
 \examples{
 
-sim <- simulate_pan(rate=1e-3,mean_trans_size=3)
+sim <- simulate_pan(rate=1e-3,mean_trans_size=2,fn_error_rate=,fp_error_rate=10)
 pa <- sim$pa
 tree <- sim$tree
 nboot <- 100
-res <- fit_tweedie(sim$pa, sim$tree)
+res <- fit_tweedie(sim$pa, sim$tree, nboot=10, max_height = NA)
+res$model_fit
 
 }
