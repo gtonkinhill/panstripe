@@ -8,11 +8,11 @@ The goal of panstripe is to improve the post processing of bacterial pangenome a
 
 ## Installation
 
-You can install the development version of panplotter by running
+You can install the development version of panstripe by running
 
 ``` r
 install.packages('remotes')
-remotes::install_github("gtonkinhill/panplotter")
+remotes::install_github("gtonkinhill/panstripe")
 ```
 
 ## Example
@@ -20,7 +20,7 @@ remotes::install_github("gtonkinhill/panplotter")
 This is a basic example which shows you how to solve a common problem:
 
 ``` r
-library(panplotter)
+library(panstripe)
 ## basic example code
 ```
 
