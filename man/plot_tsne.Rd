@@ -9,15 +9,18 @@ plot_tsne(pa, category = NULL, plot = TRUE, perplexity = 20, pcadims = 50)
 \arguments{
 \item{pa}{binary presence/absence matrix}
 
+\item{category}{a factor vector which can be used to colour the points}
+
 \item{plot}{whether to return the plot or just the data.frame used for plotting (default=FALSE)}
+
+\item{perplexity}{the `perplexity` argument passed to tSNE}
+
+\item{pcadims}{the number of principle components passed from the inital stage used in the main tSNE algorithm}
 }
 \value{
-result
+either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 }
 \description{
-
-}
-\details{
 Generates a tSNE plot from a gene presence/absence matrix
 }
 \examples{

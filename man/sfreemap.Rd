@@ -4,23 +4,19 @@
 \alias{sfreemap}
 \title{sfreemap}
 \usage{
-sfreemap(tree, pa, type = "standard", model = "ER", quiet = FALSE)
+sfreemap(tree, pa, model = "ER", quiet = FALSE)
 }
 \arguments{
-\item{tree}{}
+\item{tree}{phylo}
 
-\item{pa}{}
+\item{pa}{matrix}
 
-\item{type}{}
+\item{model}{string}
 
-\item{model}{}
-
-\item{method}{}
-
-\item{tol}{}
+\item{quiet}{logical}
 }
 \value{
-result
+list
 }
 \description{
 This function has been adapted and simplified from the code in the sfreemap R package.
@@ -33,7 +29,6 @@ Simulation free stochastic character mapping on a phylogenetic tree.
 tree <- ape::rtree(10)
 pa <- matrix(rbinom(10, 1, 0.5), ncol=1)
 rownames(pa) <- tree$tip.label
-sfreemap(tree, pa)
-
+panstripe:::sfreemap(tree, pa)
 
 }

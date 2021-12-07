@@ -1,13 +1,16 @@
 #' plot_tsne
 #'
-#' Generates a tSNE plot from a gene presence/absence matrix
-#' 
-#' @description 
+#' @importFrom rlang .data
+#'
+#' @description Generates a tSNE plot from a gene presence/absence matrix
 #'
 #' @param pa binary presence/absence matrix
+#' @param category a factor vector which can be used to colour the points
 #' @param plot whether to return the plot or just the data.frame used for plotting (default=FALSE)
+#' @param perplexity the `perplexity` argument passed to tSNE
+#' @param pcadims the number of principle components passed from the inital stage used in the main tSNE algorithm
 #'
-#' @return result
+#' @return either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 #'
 #' @examples
 #'
@@ -46,11 +49,11 @@ plot_tsne <- function(pa, category=NULL, plot=TRUE, perplexity=20, pcadims=50){
   }
   
   if (is.null(category)){
-    gg <- ggplot2::ggplot(plotdf, aes(x=dim1, y=dim2)) +
+    gg <- ggplot2::ggplot(plotdf, ggplot2::aes(x=.data$dim1, y=.data$dim2)) +
       ggplot2::geom_point() +
       ggplot2::theme_bw(base_size = 14)
   } else {
-    gg <- ggplot2::ggplot(plotdf, aes(x=dim1, y=dim2, colour=category)) +
+    gg <- ggplot2::ggplot(plotdf, ggplot2::aes(x=.data$dim1, y=.data$dim2, colour=category)) +
       ggplot2::geom_point() +
       ggplot2::theme_bw(base_size = 14)
   }

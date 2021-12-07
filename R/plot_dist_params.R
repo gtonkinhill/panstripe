@@ -1,22 +1,20 @@
 #' plot_dist_params
-#'
-#' Plots the fitted pangenome tweedie regression model.
 #' 
-#' @description 
+#' @importFrom rlang .data
+#'
+#' @description Plots the fitted pangenome tweedie regression model.
 #'
 #' @param fit the result of running the `panstripe` function. Multiple results can be passed as a named list.
 #' @param plot (default=FALSE)
 #'
-#' @return result
+#' @return either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 #'
 #' @examples
 #'
 #' sim <- simulate_pan(rate=1e-3)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=10)
 #' plot_dist_params(fA)
-#' sim <- simulate_pan(rate=1e-2)
-#' fB <- panstripe(sim$pa, sim$tree, nboot=10)
-#' plot_dist_params(list(a=fA,b=fB))
+#' plot_dist_params(list(a=fA,b=fA))
 #'
 #' @export
 plot_dist_params <- function(fit, plot=TRUE){
@@ -59,14 +57,14 @@ plot_dist_params <- function(fit, plot=TRUE){
   }
   
   if (length(fit)>1) {
-    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=core, y=value, col=pangenome)) +
+    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$core, y=.data$value, col=.data$pangenome)) +
       ggplot2::geom_line() +
-      ggplot2::geom_ribbon(ggplot2::aes(ymin=lower, ymax=upper, fill=pangenome), alpha=0.3) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3) +
       ggplot2::facet_wrap(~parameter, ncol = 2, scales = 'free_y')
   } else {
-    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=core, y=value)) +
+    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$core, y=.data$value)) +
       ggplot2::geom_line() +
-      ggplot2::geom_ribbon(ggplot2::aes(ymin=lower, ymax=upper), alpha=0.3) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper), alpha=0.3) +
       ggplot2::facet_wrap(~parameter, ncol = 2, scales = 'free_y')
   }
   

@@ -1,12 +1,12 @@
 #' plot_tree_pa
 #'
-#' Plots a phylogeny alongside a presence/absence matrix of user selected genes. 
-#' 
-#' @description 
+#' @importFrom rlang .data
+#'
+#' @description Plots a phylogeny alongside a presence/absence matrix of user selected genes. 
 #'
 #' @param tree a phylogeny in 'phylo' format
 #' @param pa binary presence/absence matrix
-#' @param genes a vector of gene to include in the plot. Must be a subset of rownames(pa) 
+#' @param genes a vector of gene to include in the plot. Must be a subset of colnames(pa) 
 #' @param align whether or not to align the tips of the phylogeny with the presence/absence matrix using dotted lines
 #' @param order whether to order the genes based upon their presence/absence pattern
 #' @param plot_titles the subplot titles (default=c('phylogeny', 'gene presence/absence'))
@@ -21,11 +21,11 @@
 #' sim <- simulate_pan(rate=1e-3)
 #' genes <- colnames(sim$pa)[which(apply(sim$pa, 2, sd)>0.2)]
 #' plot_tree_pa(sim$tree, sim$pa, genes=genes, label_genes=FALSE, cols='black')
-  #'
+#'
 #' @export
 plot_tree_pa <- function(tree, pa, genes=colnames(pa), 
                          align=TRUE,
-                         order_genes=TRUE,
+                         order=TRUE,
                          plot_titles=c('phylogeny', 'gene presence/absence'),
                          text_size=14,
                          label_genes=TRUE,
@@ -61,9 +61,9 @@ plot_tree_pa <- function(tree, pa, genes=colnames(pa),
 
   subset_pa <- pa[, colnames(pa) %in% genes, drop=FALSE]
   
-  if ((ncol(subset_pa)>2) & order_genes){
-      d <- as.dist(ncol(subset_pa) - tcrossprod(t(subset_pa)))
-      h <- hclust(d, method = 'average')
+  if ((ncol(subset_pa)>2) & order){
+      d <- stats::as.dist(ncol(subset_pa) - tcrossprod(t(subset_pa)))
+      h <- stats::hclust(d, method = 'average')
       subset_pa <- subset_pa[,h$order,drop=FALSE]
   }
   
@@ -86,7 +86,7 @@ plot_tree_pa <- function(tree, pa, genes=colnames(pa),
 
   padf$height <- nodes$pos[match(padf$isolate, nodes$nodes)]
   
-  gg <- ggplot2::ggplot(padf, ggplot2::aes(x=gene, y=heightt, fill=gene)) +
+  gg <- ggplot2::ggplot(padf, ggplot2::aes(x=.data$gene, y=.data$height, fill=.data$gene)) +
     ggplot2::geom_tile(col='white') +
     ggplot2::scale_fill_manual(values=cols) +
     ggplot2::scale_y_continuous(limits = c(0, ntips+1)) +

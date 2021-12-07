@@ -7,7 +7,7 @@
 plot_gain_loss(fit, text_size = 14, color_pallete = 7)
 }
 \arguments{
-\item{fit}{the output of running 'panstripe'}
+\item{fit}{a fitted pangenome model output by running 'panstripe'}
 
 \item{text_size}{adjusts the size of text in the plot}
 
@@ -17,9 +17,6 @@ plot_gain_loss(fit, text_size = 14, color_pallete = 7)
 a plot of the phylogeny coloured by the inferred total gene gain/loss events per branch
 }
 \description{
-
-}
-\details{
 Plots a expected gain and loss events onto the branches of the phylogeny.
 }
 \examples{

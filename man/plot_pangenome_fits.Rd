@@ -30,9 +30,6 @@ plot_pangenome_fits(
 either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 }
 \description{
-
-}
-\details{
 Plots the fitted pangenome tweedie regression model.
 }
 \examples{
@@ -42,6 +39,6 @@ fA <- panstripe(sim$pa, sim$tree, nboot=10)
 plot_pangenome_fits(fA, color_pallete=6)
 sim <- simulate_pan(rate=1e-2)
 fB <- panstripe(sim$pa, sim$tree, nboot=10)
-plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=F)
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE)
 
 }

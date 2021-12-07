@@ -1,9 +1,7 @@
 #' panstripe
 #'
-#' Fits a Tweedie distribution to the inferred gene gain and loss events along each branch of a given phylogeny. 
+#' @description Fits a Tweedie distribution to the inferred gene gain and loss events along each branch of a given phylogeny. 
 #' Includes covariates to control for the impact of annotation errors and the depth of ancestral branches.
-#' 
-#' @description 
 #'
 #' @param pa a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.
 #' @param tree a core gene phylogeny of class \link{phylo}
@@ -47,7 +45,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   } else{
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
+      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
     }))
     dat <- tibble::tibble(
       acc=rowSums(anc_states)[tree$edge[,2]],
@@ -72,13 +70,13 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
     warning("No gene gain/loss events inferred in ancestral branches! Setting tweedie power=1")
     ef <- list(p.max=1)
   } else {
-    invisible(capture.output({ef <- tweedie::tweedie.profile(acc ~ core + height + height:core , data = dat[!dat$istip,,drop=FALSE], 
+    invisible(utils::capture.output({ef <- tweedie::tweedie.profile(acc ~ core + height + height:core , data = dat[!dat$istip,,drop=FALSE], 
                                                              p.vec = seq(1.1,2,0.1),
                                                              do.smooth = TRUE, method="series", do.ci = TRUE)}))
   }
   
   if((ef$p.max<1) || (ef$p.max>=2)) stop(paste0('Invalid p.max: ', ef$p.max))
-  m <- glm(acc ~ istip*core + height + height:core , data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
+  m <- stats::glm(acc ~ istip*core + height + height:core , data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   
   if (!quiet) cat('Running bootstrap...\n')
   suppressWarnings({suppressMessages({
@@ -93,13 +91,13 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
       if (sum(tdat$acc[!tdat$istip])<3){
         tef <- list(p.max=1)
       } else {
-        invisible(capture.output({tef <- tweedie::tweedie.profile(acc ~ core + height, data = tdat[!tdat$istip,,drop=FALSE],
+        invisible(utils::capture.output({tef <- tweedie::tweedie.profile(acc ~ core + height, data = tdat[!tdat$istip,,drop=FALSE],
                                                                   p.vec = seq(1.1,1.9,0.1),
                                                                   do.smooth = FALSE, method="series")}))
       }
 
       if((tef$p.max<1) || (tef$p.max>=2)) stop(paste0('Invalid p.max: ', tef$p.max))
-      tm <- glm(acc ~ istip*core + height + height:core , data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
+      tm <- stats::glm(acc ~ istip*core + height + height:core , data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
       stm <- summary(tm)
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100), 
@@ -107,7 +105,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
                                istip=FALSE), 
                     type="response")
       
-      tout <- panstripe:::convert_tweedie(xi=tef$p.max, mu=tp, phi=stm$dispersion)
+      tout <- convert_tweedie(xi=tef$p.max, mu=tp, phi=stm$dispersion)
       
       if (!quiet) cat(paste0(round(.x / nboot * 100), '% completed\r'))
       if (!quiet & (.x == nboot)) cat('Done\n')
@@ -133,8 +131,8 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   })})
   
   # summarise results and calculate bootstrap confidence intervals
-  s <- broom::tidy(m) %>%
-    dplyr::filter(term %in% c('istipTRUE', 'core', 'height'))
+  s <- broom::tidy(m)
+  s <- s[s$term %in% c('istipTRUE', 'core', 'height'), ,drop=FALSE]
   s$term[grepl('istip', s$term)] <- 'tip'
   
   keep <- !duplicated(boot_reps$rep)
@@ -168,9 +166,9 @@ convert_tweedie <- function(xi, mu, phi){
 
 norm_boot <- function(t, index, conf=0.95){
   t0 <- t[[index]]
-  var.t0 <- var(t)
+  var.t0 <- stats::var(t)
   bias <- mean(t) - t0
-  merr <- sqrt(var.t0) * qnorm((1 + conf)/2)
+  merr <- sqrt(var.t0) * stats::qnorm((1 + conf)/2)
   return(c(t0 - bias - merr, 
            t0 - bias + merr))
 }

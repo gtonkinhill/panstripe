@@ -1,10 +1,10 @@
 #' plot_gain_loss
-#'
-#' Plots a expected gain and loss events onto the branches of the phylogeny.
 #' 
-#' @description 
+#' @importFrom rlang .data
 #'
-#' @param fit the output of running 'panstripe'
+#' @description Plots a expected gain and loss events onto the branches of the phylogeny.
+#'
+#' @param fit a fitted pangenome model output by running 'panstripe'
 #' @param text_size adjusts the size of text in the plot
 #' @param color_pallete the colour pallete to use. A number between 1 & 9. See 'scale_colour_brewer' for more details
 #'
@@ -32,7 +32,7 @@ plot_gain_loss <- function(fit,
                                        trait = fit$data$acc), 
                             by = 'node')
   
-  gg <- ggtree::ggtree(gt, ggplot2::aes(color=trait), size=1) +
+  gg <- ggtree::ggtree(gt, ggplot2::aes(color=.data$trait), size=1) +
     ggplot2::labs(colour='Total genes\ngained & lost') +
     ggplot2::scale_color_binned(type = 'viridis') +
     ggtree::geom_tiplab(align=TRUE, colour='black') +

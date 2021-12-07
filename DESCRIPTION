@@ -22,7 +22,8 @@ Imports:
     Rtsne,
     ggtree,
     patchwork,
-    matrixStats
+    matrixStats,
+    rlang
 LinkingTo: Rcpp
 Suggests: 
     knitr,

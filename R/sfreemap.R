@@ -4,26 +4,21 @@
 #' 
 #' @description This function has been adapted and simplified from the code in the sfreemap R package.
 #'
-#' @param tree 
-#' @param pa 
-#' @param type 
-#' @param model 
-#' @param method 
-#' @param prior
-#' @param tol
+#' @param tree phylo
+#' @param pa matrix
+#' @param model string
+#' @param quiet logical
 #'
-#' @return result
+#' @return list
 #'
 #' @examples
 #'
 #' tree <- ape::rtree(10)
 #' pa <- matrix(rbinom(10, 1, 0.5), ncol=1)
 #' rownames(pa) <- tree$tip.label
-#' sfreemap(tree, pa)
+#' panstripe:::sfreemap(tree, pa)
 #' 
-#'
-#' @export
-sfreemap <- function(tree, pa, type="standard", model="ER", quiet=FALSE){
+sfreemap <- function(tree, pa, model="ER", quiet=FALSE){
   
   # Reorder the tree so the root is the first row of the matrix.
   # We save the original order to make sure we have the result
@@ -36,7 +31,7 @@ sfreemap <- function(tree, pa, type="standard", model="ER", quiet=FALSE){
   if (!quiet) cat('Estimating expected gene gain/loss events...\n')
   for ( i in 1:ngenes ){
     tip_states <- pa[,i]
-    QP <- panplotter:::Q_empirical(tree, tip_states, model)
+    QP <- Q_empirical(tree, tip_states, model)
     # calculate eigen vectors
     Q_eigen <- eigen(QP$Q, TRUE, only.values = FALSE, symmetric = TRUE)
     Q_eigen$vectors_inv <- solve(Q_eigen$vectors)
@@ -46,13 +41,13 @@ sfreemap <- function(tree, pa, type="standard", model="ER", quiet=FALSE){
     tip_states_matrix[cbind(1:length(tip_states), tip_states+1)] <- 1
    
     # calculate transition probabilities
-    tp <- panplotter:::transition_probabilities(tree$edge.length, Q_eigen)
+    tp <- transition_probabilities(tree$edge.length, Q_eigen)
     
     # calculate fractional likelihoods
-    fl <- panplotter:::fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
+    fl <- fractional_likelihoods(tree$edge, tip_states_matrix, QP$prior, tp)
     
     #calculate the dwelling times
-    dt[,i] <- matrixStats::rowLogSumExps(panplotter:::dwelling_times(tree, Q_eigen, QP$Q, fl))
+    dt[,i] <- matrixStats::rowLogSumExps(dwelling_times(tree, Q_eigen, QP$Q, fl))
     dt[dt[,i]>0,i] <- 0 #we only consider a maximum of one change per branch
     
     if (!quiet) cat(paste0(round(i / ngenes * 100), '% completed\r'))

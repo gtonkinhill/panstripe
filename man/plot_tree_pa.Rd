@@ -9,7 +9,7 @@ plot_tree_pa(
   pa,
   genes = colnames(pa),
   align = TRUE,
-  order_genes = TRUE,
+  order = TRUE,
   plot_titles = c("phylogeny", "gene presence/absence"),
   text_size = 14,
   label_genes = TRUE,
@@ -21,9 +21,11 @@ plot_tree_pa(
 
 \item{pa}{binary presence/absence matrix}
 
-\item{genes}{a vector of gene to include in the plot. Must be a subset of rownames(pa)}
+\item{genes}{a vector of gene to include in the plot. Must be a subset of colnames(pa)}
 
 \item{align}{whether or not to align the tips of the phylogeny with the presence/absence matrix using dotted lines}
+
+\item{order}{whether to order the genes based upon their presence/absence pattern}
 
 \item{plot_titles}{the subplot titles (default=c('phylogeny', 'gene presence/absence'))}
 
@@ -32,16 +34,11 @@ plot_tree_pa(
 \item{label_genes}{whether to print the gene labels in the presence/absence matrix}
 
 \item{cols}{colours for the gene presence/absence matrix. These will be recycled if #genes > #colours.}
-
-\item{order}{whether to order the genes based upon their presence/absence pattern}
 }
 \value{
 a patchwork object plotting the phylogeny alongside the gene presence/absence matrix
 }
 \description{
-
-}
-\details{
 Plots a phylogeny alongside a presence/absence matrix of user selected genes.
 }
 \examples{

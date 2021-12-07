@@ -9,6 +9,10 @@ plot_acc(pa, nperm = 100, legend = TRUE, text_size = 14, color_pallete = 6)
 \arguments{
 \item{pa}{a gene precence/absence matrix. Alternatively a list of matrices can be given.}
 
+\item{nperm}{the number of permutation to perform (default=100)}
+
+\item{legend}{whether or not to plot the legend (default=TRUE)}
+
 \item{text_size}{adjusts the size of text in the plot}
 
 \item{color_pallete}{the colour pallete to use. A number between 1 & 9. See 'scale_colour_brewer' for more details}
@@ -17,9 +21,6 @@ plot_acc(pa, nperm = 100, legend = TRUE, text_size = 14, color_pallete = 6)
 a plot of the pangenome accumulation curve
 }
 \description{
-
-}
-\details{
 Plots a pangenome accumulation curve.
 }
 \examples{

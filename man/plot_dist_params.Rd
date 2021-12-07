@@ -12,12 +12,9 @@ plot_dist_params(fit, plot = TRUE)
 \item{plot}{(default=FALSE)}
 }
 \value{
-result
+either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 }
 \description{
-
-}
-\details{
 Plots the fitted pangenome tweedie regression model.
 }
 \examples{
@@ -25,8 +22,6 @@ Plots the fitted pangenome tweedie regression model.
 sim <- simulate_pan(rate=1e-3)
 fA <- panstripe(sim$pa, sim$tree, nboot=10)
 plot_dist_params(fA)
-sim <- simulate_pan(rate=1e-2)
-fB <- panstripe(sim$pa, sim$tree, nboot=10)
-plot_dist_params(list(a=fA,b=fB))
+plot_dist_params(list(a=fA,b=fA))
 
 }
