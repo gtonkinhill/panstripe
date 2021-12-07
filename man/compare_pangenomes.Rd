@@ -4,7 +4,7 @@
 \alias{compare_pangenomes}
 \title{compare_pangenomes}
 \usage{
-compare_pangenomes(resA, resB)
+compare_pangenomes(fitA, fitB)
 }
 \arguments{
 \item{intercept}{}
@@ -22,9 +22,8 @@ Compares pangenomes using anova
 
 simA <- simulate_pan(rate=0, fp_error_rate=1, fn_error_rate=1)
 simB <- simulate_pan(rate=0, fp_error_rate=5, fn_error_rate=5)
-resA <- fit_tweedie(simA$pa, simA$tree, nboot=0)
-resB <- fit_tweedie(simB$pa, simB$tree, nboot=0)
-plot_pangenome_fits(list(a=resA, b=resB))
-comp <- compare_pangenomes(resA, resB)
+fA <- panstripe(simA$pa, simA$tree, nboot=0)
+fB <- panstripe(simB$pa, simB$tree, nboot=0)
+comp <- compare_pangenomes(fA, fB)
 
 }

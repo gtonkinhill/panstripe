@@ -5,21 +5,29 @@
 \title{plot_pangenome_fits}
 \usage{
 plot_pangenome_fits(
-  res,
+  fit,
+  boot = FALSE,
   plot = TRUE,
-  center = FALSE,
   legend = TRUE,
   text_size = 14,
   color_pallete = 6
 )
 }
 \arguments{
-\item{res}{the result of running the `fit_tweedie` function. Multiple results can be passed as a named list.}
+\item{fit}{the result of running the `panstripe` function. Multiple fits can be passed as a named list.}
 
-\item{plot}{(default=FALSE)}
+\item{boot}{whether to use estimated SE for confidence intervals (default) or bootstrap estimates.}
+
+\item{plot}{whether to generate the plot (default) or return a data.frame}
+
+\item{legend}{toggles the display of the legend on and off}
+
+\item{text_size}{the base text size of the plot (default=14)}
+
+\item{color_pallete}{the pallete number passed to `scale_fill_brewer`}
 }
 \value{
-result
+either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 }
 \description{
 
@@ -29,8 +37,11 @@ Plots the fitted pangenome tweedie regression model.
 }
 \examples{
 
-sim <- simulate_pan(rate=1e-3)
-res <- fit_tweedie(sim$pa, sim$tree, nboot=10)
-plot_pangenome_fits(list(a=res,b=res), color_pallete=6)
+sim <- simulate_pan(rate=0)
+fA <- panstripe(sim$pa, sim$tree, nboot=10)
+plot_pangenome_fits(fA, color_pallete=6)
+sim <- simulate_pan(rate=1e-2)
+fB <- panstripe(sim$pa, sim$tree, nboot=10)
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=F)
 
 }

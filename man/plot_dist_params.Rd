@@ -4,10 +4,10 @@
 \alias{plot_dist_params}
 \title{plot_dist_params}
 \usage{
-plot_dist_params(res, plot = TRUE)
+plot_dist_params(fit, plot = TRUE)
 }
 \arguments{
-\item{res}{the result of running the `fit_tweedie` function. Multiple results can be passed as a named list.}
+\item{fit}{the result of running the `panstripe` function. Multiple results can be passed as a named list.}
 
 \item{plot}{(default=FALSE)}
 }
@@ -23,7 +23,10 @@ Plots the fitted pangenome tweedie regression model.
 \examples{
 
 sim <- simulate_pan(rate=1e-3)
-res <- fit_tweedie(sim$pa, sim$tree)
-plot_dist_params(res)
+fA <- panstripe(sim$pa, sim$tree, nboot=10)
+plot_dist_params(fA)
+sim <- simulate_pan(rate=1e-2)
+fB <- panstripe(sim$pa, sim$tree, nboot=10)
+plot_dist_params(list(a=fA,b=fB))
 
 }

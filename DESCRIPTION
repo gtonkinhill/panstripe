@@ -1,11 +1,11 @@
 Package: panstripe
 Type: Package
 Title: Pangenome Plots
-Version: 1.0
+Version: 0.1
 Date: 2021-03-25
 Author: Gerry Tonkin-Hill
 Maintainer: Gerry Tonkin-Hill <g.tonkinhill@gmail.com>
-Description: One paragraph description of what the package does as one or more full sentences.
+Description: Infers prokaryotic pangenome gene gain and loss rates accounting for annotation errors and generates summary plots.
 License: GPL (>= 2)
 Imports: 
     Rcpp,

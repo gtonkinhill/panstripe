@@ -16,6 +16,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=7,
 ```
 
 ```{r setup}
+set.seed(1234)
 library(panstripe)
 library(ggplot2)
 ```
@@ -33,7 +34,7 @@ sim <- simulate_pan(rate = 1e-3)
 We can now estimate the expected number of gene gain and loss events along each branch of the phylogeny and fit a tweedie regression model.
 
 ```{r}
-res <- fit_tweedie(sim$pa, sim$tree, quiet=TRUE)
+fit <- panstripe(sim$pa, sim$tree, quiet=TRUE)
 ```
 
 #Investigate results
@@ -41,16 +42,14 @@ res <- fit_tweedie(sim$pa, sim$tree, quiet=TRUE)
 We can test whether the expected gene gain/loss rate is significantly different from a model consisting of just errors by looking at the p-value of the fit.
 
 ```{r}
-res$model_fit
+fit$summary
 ```
-
-Here the association between the `core` branch length and gene gain/loss events was found to have a p-value of `r format(res$model_fit$p.value[[2]], digits=3)`.
 
 
 We can also generate a plot of the resulting fit with confidence intervals generated via bootstrap sampling of the phylogeny branches.
 
 ```{r}
-plot_pangenome_fits(res)
+plot_pangenome_fits(fit)
 ```
 
 #Comparing pangenomes
@@ -64,26 +63,26 @@ sim_closed <- simulate_pan(rate = 0)
 Again we fit the a tweedie regression model after first estimating the gene gain/loss events per branch.
 
 ```{r}
-res_closed <- fit_tweedie(sim_closed$pa, sim_closed$tree, quiet=TRUE)
-res_closed$model_fit
+fit_closed <- panstripe(sim_closed$pa, sim_closed$tree, quiet=TRUE)
+fit_closed$summary
 ```
 
 We can now test to see whether the choice of pangenome (open or closed) is significant.
 
 ```{r}
-compare_pangenomes(res, res_closed)
+compare_pangenomes(fit, fit_closed)
 ```
 
 We can also plot the difference between the fits.
 
 ```{r}
 plot_pangenome_fits(list(
-  open=res, 
-  closed=res_closed))
+  open=fit, 
+  closed=fit_closed), boot = TRUE)
 
 plot_dist_params(list(
-  open=res, 
-  closed=res_closed))
+  open=fit, 
+  closed=fit_closed))
 ```
 
 #Investigate differences in the average size of gene gain/loss events
@@ -99,18 +98,18 @@ First lets simulate and fit two pangenomes. One with a larger average recombinat
 sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 2)
 sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 10)
 
-res_small_rec <- fit_tweedie(sim_small_rec$pa, sim_small_rec$tree, quiet=TRUE)
-res_large_rec <- fit_tweedie(sim_large_rec$pa, sim_large_rec$tree, quiet=TRUE)
+res_small_rec <- panstripe(sim_small_rec$pa, sim_small_rec$tree, quiet=TRUE)
+res_large_rec <- panstripe(sim_large_rec$pa, sim_large_rec$tree, quiet=TRUE)
 ```
 
 We can first test whether the overall rate of gene gain/loss is different between the two pangenomes.
 
 ```{r}
 comp <- compare_pangenomes(res_small_rec, res_large_rec)
-comp
+comp$summary
 ```
 
-As expected given the large difference in the average size of gene gain/loss events there is a significant difference in the total rate between the two pangenomes (p=`r comp$aov$p.value[[2]]`).
+As expected given the large difference in the average size of gene gain/loss events there is a significant difference in the total rate between the two pangenomes.
 
 We can now look closer into what is driving this difference.
 

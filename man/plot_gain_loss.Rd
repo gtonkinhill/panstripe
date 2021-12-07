@@ -4,21 +4,17 @@
 \alias{plot_gain_loss}
 \title{plot_gain_loss}
 \usage{
-plot_gain_loss(res, adjusted = "both", text_size = 14, color_pallete = 7)
+plot_gain_loss(fit, text_size = 14, color_pallete = 7)
 }
 \arguments{
-\item{res}{the output of running 'fit_tweedie'}
-
-\item{adjusted}{whether of not to adjust the plot for errors (see description)}
+\item{fit}{the output of running 'panstripe'}
 
 \item{text_size}{adjusts the size of text in the plot}
 
 \item{color_pallete}{the colour pallete to use. A number between 1 & 9. See 'scale_colour_brewer' for more details}
-
-\item{label_genes}{whether to print the gene labels in the presence/absence matrix}
 }
 \value{
-a plot of the phylogeny coloured by the expected total gene gain/loss events per branch
+a plot of the phylogeny coloured by the inferred total gene gain/loss events per branch
 }
 \description{
 
@@ -29,7 +25,7 @@ Plots a expected gain and loss events onto the branches of the phylogeny.
 \examples{
 
 sim <- simulate_pan(rate=1e-3)
-res <- fit_tweedie(sim$pa, sim$tree)
-plot_gain_loss(res, 'both', color_pallete=7)
+fA <- panstripe(sim$pa, sim$tree, nboot=0)
+plot_gain_loss(fA, color_pallete=7)
 
 }
