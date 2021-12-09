@@ -72,7 +72,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   } else {
     invisible(utils::capture.output({ef <- tweedie::tweedie.profile(acc ~ core + height + height:core , data = dat[!dat$istip,,drop=FALSE], 
                                                              p.vec = seq(1.1,2,0.1),
-                                                             do.smooth = TRUE, method="series", do.ci = TRUE)}))
+                                                             do.smooth = TRUE, method="series")}))
   }
   
   if((ef$p.max<1) || (ef$p.max>=2)) stop(paste0('Invalid p.max: ', ef$p.max))
@@ -134,11 +134,13 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   s <- broom::tidy(m)
   s <- s[s$term %in% c('istipTRUE', 'core', 'height'), ,drop=FALSE]
   s$term[grepl('istip', s$term)] <- 'tip'
+  s <- s[match(c('tip', 'core', 'height'), s$term),]
+  
   
   keep <- !duplicated(boot_reps$rep)
   index <- which(boot_reps$rep[keep]==1)
-  boot.ci <-  rbind(norm_boot(boot_reps$model.core.estimate[keep], index = index),
-                    norm_boot(boot_reps$model.tip.estimate[keep], index = index),
+  boot.ci <-  rbind(norm_boot(boot_reps$model.tip.estimate[keep], index = index),
+                    norm_boot(boot_reps$model.core.estimate[keep], index = index),
                     norm_boot(boot_reps$model.height.estimate[keep], index = index))
   colnames(boot.ci) <- c('bootstrap CI (2.5%)', 'bootstrap CI (97.5%)')
   

@@ -127,3 +127,15 @@ plot_dist_params(list(
   small=res_small_rec))
 ```
 
+
+## References
+
+---
+nocite: '@*'
+...
+
+##Appendix
+
+```{r}
+sessionInfo()
+```

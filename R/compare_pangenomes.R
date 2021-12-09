@@ -9,8 +9,8 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=0, fp_error_rate=1, fn_error_rate=1)
-#' simB <- simulate_pan(rate=0, fp_error_rate=5, fn_error_rate=5)
+#' simA <- simulate_pan(rate=1e-3)
+#' simB <- simulate_pan(rate=1e-4)
 #' fA <- panstripe(simA$pa, simA$tree, nboot=0)
 #' fB <- panstripe(simB$pa, simB$tree, nboot=0)
 #' comp <- compare_pangenomes(fA, fB)
@@ -28,9 +28,10 @@ compare_pangenomes <- function(fitA, fitB){
   dat <- purrr::imap_dfr(list(fitA, fitB), ~{
     tibble::add_column(.x$data, pangenome=LETTERS[[.y]], .before=1)
   })
+  dat$istip <- 1*dat$istip
   
   # fit model
-  model <- stats::as.formula("acc ~ core*istip + height + height:core + istip:pangenome + core:pangenome ")
+  model <- stats::as.formula("acc ~ core*istip + height + height:core + istip:pangenome + core:pangenome")
   
   if (sum(dat$acc[!dat$istip])<3){
     warning("No gene gain/loss events inferred in ancestral branches! Setting tweedie power=1")
@@ -46,11 +47,9 @@ compare_pangenomes <- function(fitA, fitB){
   m <- stats::glm(model, data = dat, 
                   family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   
-  a <- stats::anova(m, test="F")
-
-  s <- broom::tidy(a[c('Df','F','Pr(>F)')])
-  s <- s[s$term %in% c('istip:pangenome', 'core:pangenome'), , drop=FALSE]
-  s$term <- ifelse(s$term=='core:pangenome', 'core', 'tip')
+  s <- broom::tidy(m)
+  s <- s[s$term %in% c('istip:pangenomeB', 'core:pangenomeB'), , drop=FALSE]
+  s$term <- ifelse(s$term=='core:pangenomeB', 'core', 'tip')
   
   return(list(
     summary=s,

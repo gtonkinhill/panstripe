@@ -19,8 +19,8 @@ Compares pangenomes using anova
 }
 \examples{
 
-simA <- simulate_pan(rate=0, fp_error_rate=1, fn_error_rate=1)
-simB <- simulate_pan(rate=0, fp_error_rate=5, fn_error_rate=5)
+simA <- simulate_pan(rate=1e-3)
+simB <- simulate_pan(rate=1e-4)
 fA <- panstripe(simA$pa, simA$tree, nboot=0)
 fB <- panstripe(simB$pa, simB$tree, nboot=0)
 comp <- compare_pangenomes(fA, fB)

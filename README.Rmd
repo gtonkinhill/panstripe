@@ -1,7 +1,11 @@
 ---
-bibliography: vignettes/bibliography.bib
+title: "panstripe"
 output: 
-  github_document
+  github_document:
+    includes:
+      in_header: inst/vignette-supp/header.md
+    toc: true
+    toc_depth: 3
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -66,42 +70,117 @@ tree <- read.tree(phylo.file.name)
 fit <- panstripe(pa, tree)
 ```
 
-A plot of the fit can then be created as
-
-```{r}
-plot_pangenome_fits(fit)
-```
-
-A more thorough introduction is given below which includes how to compare pangenome fits between data sets and how to interpret the inferred parameters of the model.
-
 ## Citation
 
 To cite panstripe please use:
 
 
-## Introduction
+## Comparing Pangenomes
 
-```{r, echo = FALSE}
-intro_rmd <- "vignettes/Introduction.Rmd"
+```{r}
+# Simulate a fast gene gain/loss rate with error
+sim_fast <- simulate_pan(rate = 1e-2, ngenomes = 100)
+sim_slow <- simulate_pan(rate = 1e-3, ngenomes = 100)
 
-raw_rmd <- readLines(intro_rmd)
+# Run panstripe
+fit_fast <- panstripe(sim_fast$pa, sim_fast$tree)
+fit_slow <- panstripe(sim_slow$pa, sim_slow$tree)
 
-# remove yaml 
-yaml_lines <- grep("---", raw_rmd)
-
-# remove appendix (session info)
-appendix <- grep("Appendix", raw_rmd)
-
-compressed_rmd <- raw_rmd[c(-seq(yaml_lines[1], yaml_lines[2], by = 1), 
-                            -seq(appendix, length(raw_rmd)))]
-writeLines(compressed_rmd, "child.Rmd")
+# Compare the fits
+result <- compare_pangenomes(fit_fast, fit_slow)
+result$summary
 ```
 
-```{r, child = 'child.Rmd'}
+## Open vs Closed
+
+The definition of what constitutes an open or closed pangenome is somewhat ambiguous. We prefer to consider whether there is evidence for a temporal signal in the pattern of gene gain and loss. This prevents annotation errors leading to misleading results. 
+
+After fitting a panstripe model the significance of the temporal signal can be assessed by considering the coefficient and p-value of the 'core' term in the model. The uncertainty of this estimate can also be considered by looking at the bootstrap confidence intervals of the core term.
+
+Let's simulate a 'closed' pangenome
+
+```{r}
+sim_closed <- simulate_pan(rate = 0, ngenomes = 100)
+fit_closed <- panstripe(sim_closed$pa, sim_closed$tree)
+
+fit_closed$summary
 ```
 
-```{r cleanup, echo=FALSE, include=FALSE}
-if (file.exists("child.Rmd")) {
-  file.remove("child.Rmd")
-}
+```{r}
+plot_pangenome_fits(fit_closed)
 ```
+
+## Rate vs Size
+
+Model parameters
+
+```{r}
+sim_large <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 10)
+sim_small <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 2)
+
+fit_large <- panstripe(sim_large$pa, sim_large$tree)
+fit_small <- panstripe(sim_small$pa, sim_small$tree)
+
+plot_dist_params(list(large=fit_large, small=fit_small))
+```
+
+```{r}
+plot_dist_params(list(fast=fit_fast, slow=fit_slow))
+```
+
+## Plots
+
+Panstripe includes a number of useful plotting functions to help with interpretation of the output of panaroo.
+
+
+### Pangenome fit
+
+A simple plot of the fit of the model along with the input data points can be made by running
+
+```{r}
+plot_pangenome_fits(fit_fast)
+```
+
+The `plot_pangenome_fits` function can also take a named list as input allowing for easy comparisons between data sets
+
+```{r}
+plot_pangenome_fits(list(fast=fit_fast, slow=fit_slow))
+```
+
+### Tree with presence/absence
+
+A plot of the phylogeny and the corresponding gene presence/absence matrix can be made using the `plot_tree_pa` function. This function also takes an optional vector of gene names to include in the plot.
+
+```{r}
+#look at only those genes that vary
+variable_genes <- colnames(pa)[apply(pa, 2, sd)>0]
+
+plot_tree_pa(tree = tree, pa = pa, genes = variable_genes, label_genes = FALSE, cols = 'black')
+```
+### Inferred ancestral states
+
+The `plot_gain_loss` function allows for the visualisation of the fitted gene gain and loss events on the given phylogeny. The enrichment for events at the tips of a tree is often driven by a combination of highly mobile elements and annotation errors.
+
+```{r}
+plot_gain_loss(fit)
+```
+
+### tSNE
+
+The tSNE dimension reduction technique can be used to investigate evidence for clusters within the pangenome. 
+
+```{r}
+plot_tsne(pa)
+```
+
+The [Mandrake](https://github.com/johnlees/mandrake) method can also be used as an alternative to tSNE.
+
+### Accumulation curves
+
+While we do not recommend the use of accumulation curves as they do not account for population structure, sampling bias or annotation errors we have included a function to plot them to make it easier for users to compare methods.
+
+```{r}
+plot_acc(list(fast=sim_fast$pa, slow=sim_slow$pa))
+```
+
+

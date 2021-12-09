@@ -6,6 +6,8 @@
 #'
 #' @param fit the result of running the `panstripe` function. Multiple results can be passed as a named list.
 #' @param plot (default=FALSE)
+#' @param text_size the base text size of the plot (default=14)
+#' @param color_pallete the pallete number passed to `scale_fill_brewer`
 #'
 #' @return either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 #'
@@ -17,7 +19,7 @@
 #' plot_dist_params(list(a=fA,b=fA))
 #'
 #' @export
-plot_dist_params <- function(fit, plot=TRUE){
+plot_dist_params <- function(fit, plot=TRUE, text_size=14, color_pallete=6){
   
   # check inputs
   if (class(fit)!='panfit'){
@@ -39,7 +41,7 @@ plot_dist_params <- function(fit, plot=TRUE){
               "lower"=quantile(tpoisson.lambda, 0.025),
               "upper"=quantile(tpoisson.lambda, 0.975)
             ) %>%
-            tibble::add_column(parameter='Poisson mean'),
+            tibble::add_column(parameter='Rate (Poisson mean)'),
           .x$bootrap_replicates %>% 
             dplyr::filter(converged) %>%
             dplyr::group_by(core) %>%
@@ -48,7 +50,7 @@ plot_dist_params <- function(fit, plot=TRUE){
               "lower"=quantile(tgamma.mean, 0.025),
               "upper"=quantile(tgamma.mean, 0.975)
             ) %>%
-            tibble::add_column(parameter='Gamma mean')) %>%
+            tibble::add_column(parameter='Size (Gamma mean)')) %>%
       tibble::add_column(pangenome=.y)
   })
   
@@ -71,7 +73,9 @@ plot_dist_params <- function(fit, plot=TRUE){
   gg <- gg + 
     ggplot2::xlab('core phylogentic branch distance') +
     ggplot2::ylab('estimated parameter value') +
-    ggplot2::theme_bw(base_size = 14)
+    ggplot2::theme_bw(base_size = text_size) +
+    ggplot2::scale_colour_brewer(type = 'qual', palette = color_pallete) +
+    ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete)
   
   return(gg)
   

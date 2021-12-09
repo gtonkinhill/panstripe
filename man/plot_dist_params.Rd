@@ -4,12 +4,16 @@
 \alias{plot_dist_params}
 \title{plot_dist_params}
 \usage{
-plot_dist_params(fit, plot = TRUE)
+plot_dist_params(fit, plot = TRUE, text_size = 14, color_pallete = 6)
 }
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple results can be passed as a named list.}
 
 \item{plot}{(default=FALSE)}
+
+\item{text_size}{the base text size of the plot (default=14)}
+
+\item{color_pallete}{the pallete number passed to `scale_fill_brewer`}
 }
 \value{
 either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
