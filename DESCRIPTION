@@ -23,7 +23,8 @@ Imports:
     ggtree,
     patchwork,
     matrixStats,
-    rlang
+    rlang,
+    readr
 LinkingTo: Rcpp
 Suggests: 
     knitr,

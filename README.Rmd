@@ -1,0 +1,107 @@
+---
+bibliography: vignettes/bibliography.bib
+output: 
+  github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "inst/vignette-supp/",
+  echo=TRUE, 
+  warning=FALSE, 
+  message=FALSE,
+  tidy=TRUE
+)
+```
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/gtonkinhill/panstripe/workflows/R-CMD-check/badge.svg)](https://github.com/gtonkinhill/panstripe/actions)
+<!-- [![DOI](https://zenodo.org/badge/137083307.svg)](https://zenodo.org/badge/latestdoi/137083307) -->
+<!-- badges: end -->
+
+
+# panstripe
+
+Panstripe improves the post processing of bacterial pangenome analyses. In particular it aims to replace the dubious but popular pangenome accumulation curve. The package is currently under development so frequent changes are to be expected.
+
+## Installation
+
+`panstripe` is currently available on GitHub. It can be installed with `devtools`
+
+```{r, eval=FALSE}
+install.packages('remotes')
+remotes::install_github("gtonkinhill/panstripe")
+```
+
+If you would like to also build the vignette with your installation run:
+
+```{r, eval=FALSE}
+remotes::install_github("gtonkinhill/panstripe", build_vignettes = TRUE)
+```
+
+## Quick Start
+
+Panstripe takes as input a phylogeny and gene presence/absence matrix in Rtab format as is produced by [Panaroo](https://gtonkinhill.github.io/panaroo/#/), [Roary](https://github.com/sanger-pathogens/Roary), [PIRATE](https://github.com/SionBayliss/PIRATE) and other prokaryotic pangenome tools.
+
+
+```{r, warning=FALSE, message=FALSE}
+library(panstripe)
+library(ape)
+
+###
+# NOTE: here we load example files from the panstripe package. You should replace these variables with the relevant paths to the files you are using.
+phylo.file.name <- system.file("extdata", "tree.newick", package = "panstripe")
+rtab.file.name <- system.file("extdata", "gene_presence_absence.Rtab", package = "panstripe")
+###
+
+# Load files
+pa <- read_rtab(rtab.file.name)
+tree <- read.tree(phylo.file.name)
+
+# Run panstripe
+fit <- panstripe(pa, tree)
+```
+
+A plot of the fit can then be created as
+
+```{r}
+plot_pangenome_fits(fit)
+```
+
+A more thorough introduction is given below which includes how to compare pangenome fits between data sets and how to interpret the inferred parameters of the model.
+
+## Citation
+
+To cite panstripe please use:
+
+
+## Introduction
+
+```{r, echo = FALSE}
+intro_rmd <- "vignettes/Introduction.Rmd"
+
+raw_rmd <- readLines(intro_rmd)
+
+# remove yaml 
+yaml_lines <- grep("---", raw_rmd)
+
+# remove appendix (session info)
+appendix <- grep("Appendix", raw_rmd)
+
+compressed_rmd <- raw_rmd[c(-seq(yaml_lines[1], yaml_lines[2], by = 1), 
+                            -seq(appendix, length(raw_rmd)))]
+writeLines(compressed_rmd, "child.Rmd")
+```
+
+```{r, child = 'child.Rmd'}
+```
+
+```{r cleanup, echo=FALSE, include=FALSE}
+if (file.exists("child.Rmd")) {
+  file.remove("child.Rmd")
+}
+```

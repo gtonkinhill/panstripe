@@ -78,7 +78,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   if((ef$p.max<1) || (ef$p.max>=2)) stop(paste0('Invalid p.max: ', ef$p.max))
   m <- stats::glm(acc ~ istip*core + height + height:core , data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
   
-  if (!quiet) cat('Running bootstrap...\n')
+  if (!quiet) message('Running bootstrap...\n')
   suppressWarnings({suppressMessages({
     boot_reps <- purrr::map_dfr(1:nboot, ~{
       if (.x==1){
@@ -107,8 +107,8 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
       
       tout <- convert_tweedie(xi=tef$p.max, mu=tp, phi=stm$dispersion)
       
-      if (!quiet) cat(paste0(round(.x / nboot * 100), '% completed\r'))
-      if (!quiet & (.x == nboot)) cat('Done\n')
+      if (!quiet) message(paste0(round(.x / nboot * 100), '% completed\r'))
+      if (!quiet & (.x == nboot)) message('Done\n')
       variances <- diag(vcov(tm))
       
       data.frame(
