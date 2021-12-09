@@ -22,12 +22,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-<!-- badges: start -->
-[![R-CMD-check](https://github.com/gtonkinhill/panstripe/workflows/R-CMD-check/badge.svg)](https://github.com/gtonkinhill/panstripe/actions)
-<!-- [![DOI](https://zenodo.org/badge/137083307.svg)](https://zenodo.org/badge/latestdoi/137083307) -->
-<!-- badges: end -->
-
-
 # panstripe
 
 Panstripe improves the post processing of bacterial pangenome analyses. In particular it aims to replace the dubious but popular pangenome accumulation curve. The package is currently under development so frequent changes are to be expected.
@@ -157,6 +151,8 @@ variable_genes <- colnames(pa)[apply(pa, 2, sd)>0]
 
 plot_tree_pa(tree = tree, pa = pa, genes = variable_genes, label_genes = FALSE, cols = 'black')
 ```
+
+
 ### Inferred ancestral states
 
 The `plot_gain_loss` function allows for the visualisation of the fitted gene gain and loss events on the given phylogeny. The enrichment for events at the tips of a tree is often driven by a combination of highly mobile elements and annotation errors.
