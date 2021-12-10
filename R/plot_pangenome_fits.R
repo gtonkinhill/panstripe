@@ -43,7 +43,6 @@ plot_pangenome_fits <- function(fit,
   if (boot){
     fit_dat <- purrr::imap_dfr(fit, ~{
       .x$bootrap_replicates %>%
-        dplyr::filter(converged) %>%
         dplyr::group_by(core) %>%
         dplyr::summarise(
           val=tmean[which(rep==1)],

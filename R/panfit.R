@@ -17,7 +17,7 @@ new_panfit <- function(summary, model, data, bootrap_replicates,
                        tree, pa){
   
   stopifnot(any(class(summary) %in% c('NULL','tbl','data.frame')))
-  stopifnot(any(class(model) %in% c('NULL','glm')))
+  stopifnot(any(class(model) %in% c('NULL','glm','glmmTMB')))
   stopifnot(any(class(data) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(bootrap_replicates) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(tree) %in% c('NULL','phylo')))
@@ -76,7 +76,7 @@ validate_panfit <- function(x) {
   }
   
   # check model
-  if(!any(class(x$model) %in% c('NULL','glm'))) stop("Invalid class for `model`", call. = FALSE)
+  if(!any(class(x$model) %in% c('NULL','glm','glmmTMB'))) stop("Invalid class for `model`", call. = FALSE)
   
   # check data
   if(!any(class(x$data) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `data`", call. = FALSE)
@@ -98,7 +98,7 @@ validate_panfit <- function(x) {
   # check bootrap_replicates
   if(!any(class(x$bootrap_replicates) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `bootrap_replicates`", call. = FALSE)
   if (!is.null(x$bootrap_replicates)){
-    if(ncol(x$bootrap_replicates)!=12) {
+    if(ncol(x$bootrap_replicates)!=11) {
       stop(
         "There must be 12 columns in `bootrap_replicates` data.frame",
         call. = FALSE
@@ -107,8 +107,7 @@ validate_panfit <- function(x) {
     if(!all(c('rep','core','tmean','tpoisson.lambda',
               'tgamma.mean','tgamma.phi','model.xi',
               'model.dispersion.estimate','model.tip.estimate',
-              'model.core.estimate','model.height.estimate',
-              'converged') %in% colnames(x$bootrap_replicates))) {
+              'model.core.estimate','model.height.estimate') %in% colnames(x$bootrap_replicates))) {
       stop(
         "Invalid column names in `bootrap_replicates` data.frame",
         call. = FALSE

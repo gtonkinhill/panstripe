@@ -70,7 +70,7 @@ To cite panstripe please use:
 ```{r}
 # Simulate a fast gene gain/loss rate with error
 sim_fast <- simulate_pan(rate = 1e-2, ngenomes = 100)
-sim_slow <- simulate_pan(rate = 1e-3, ngenomes = 100)
+sim_slow <- simulate_pan(rate = 1e-4, ngenomes = 100)
 
 # Run panstripe
 fit_fast <- panstripe(sim_fast$pa, sim_fast$tree)

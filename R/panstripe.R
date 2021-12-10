@@ -15,12 +15,12 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=1e-3, mean_trans_size=2, fn_error_rate=2, fp_error_rate=10)
+#' sim <- simulate_pan(rate=0, mean_trans_size=2, fn_error_rate=2, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 10
 #' res <- panstripe(sim$pa, sim$tree, nboot=10, max_height = NA)
-#' res
+#' res$summary
 #'
 #' @export
 panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, stochastic.mapping=FALSE){
@@ -45,7 +45,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   } else{
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
+      return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
     }))
     dat <- tibble::tibble(
       acc=rowSums(anc_states)[tree$edge[,2]],
@@ -65,20 +65,17 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
     dat <- dat[height[tree$edge[,1]] <= max_height, ,drop=FALSE]
   }
   
-  
+  # fit model
   if (sum(dat$acc[!dat$istip])<3){
-    warning("No gene gain/loss events inferred in ancestral branches! Setting tweedie power=1")
-    ef <- list(p.max=1)
+    warning("Very few gene gain/loss events inferred in ancestral branches! Ignoring core term and fitting Poisson!")
+    m <- glmmTMB::glmmTMB(acc ~ istip, data = dat, family = poisson)
   } else {
-    invisible(utils::capture.output({ef <- tweedie::tweedie.profile(acc ~ core + height + height:core , data = dat[!dat$istip,,drop=FALSE], 
-                                                             p.vec = seq(1.1,2,0.1),
-                                                             do.smooth = TRUE, method="series")}))
+    m <- glmmTMB::glmmTMB(acc ~ istip*core + height + height:core, data = dat, family = glmmTMB::tweedie)
   }
+  sm <- summary(m)$coefficients$cond %>% 
+    tibble::as_tibble(rownames = 'term')
   
-  if((ef$p.max<1) || (ef$p.max>=2)) stop(paste0('Invalid p.max: ', ef$p.max))
-  m <- stats::glm(acc ~ istip*core + height + height:core , data = dat, family = statmod::tweedie(var.power = ef$p.max, link.power = 0))
-  
-  if (!quiet) message('Running bootstrap...\n')
+  if (!quiet) cat('Running bootstrap...\n')
   suppressWarnings({suppressMessages({
     boot_reps <- purrr::map_dfr(1:nboot, ~{
       if (.x==1){
@@ -89,28 +86,33 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
       }
       
       if (sum(tdat$acc[!tdat$istip])<3){
-        tef <- list(p.max=1)
+        warning("Very few gene gain/loss events inferred in ancestral branches! Ignoring core term and fitting Poisson!")
+        tm <- glmmTMB::glmmTMB(acc ~ istip, data = tdat, family = poisson)
+        tpower <- NA
+        dispersion <- NA
+        stm <- summary(tm)$coefficients$cond
       } else {
-        invisible(utils::capture.output({tef <- tweedie::tweedie.profile(acc ~ core + height, data = tdat[!tdat$istip,,drop=FALSE],
-                                                                  p.vec = seq(1.1,1.9,0.1),
-                                                                  do.smooth = FALSE, method="series")}))
+        tm <- glmmTMB::glmmTMB(acc ~ istip*core + height + height:core, data = tdat, family = glmmTMB::tweedie)
+        tpower <- unname(plogis(tm$fit$par["thetaf"]) + 1)
+        dispersion <- unname(exp(glmmTMB::fixef(tm)$disp))
+        stm <- summary(tm)$coefficients$cond
       }
+      
+      
 
-      if((tef$p.max<1) || (tef$p.max>=2)) stop(paste0('Invalid p.max: ', tef$p.max))
-      tm <- stats::glm(acc ~ istip*core + height + height:core , data = tdat, family = statmod::tweedie(var.power = tef$p.max, link.power = 0))
-      stm <- summary(tm)
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100), 
                                height = seq(0, max(dat$core), max(dat$core)/100), 
                                istip=FALSE), 
                     type="response")
       
-      tout <- convert_tweedie(xi=tef$p.max, mu=tp, phi=stm$dispersion)
+      tout <- convert_tweedie(xi=tpower,
+                              mu=tp,
+                              phi=dispersion)
       
-      if (!quiet) message(paste0(round(.x / nboot * 100), '% completed\r'))
-      if (!quiet & (.x == nboot)) message('Done\n')
-      variances <- diag(vcov(tm))
-      
+      if (!quiet) cat(paste0(round(.x / nboot * 100), '% completed\r'))
+      if (!quiet & (.x == nboot)) cat('Done\n')
+
       data.frame(
         rep=rep(.x,length(tp)),
         core=seq(0, max(dat$core), max(dat$core)/100),
@@ -118,24 +120,21 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
         tpoisson.lambda=tout$poisson.lambda,
         tgamma.mean=tout$gamma.mean,
         tgamma.phi=tout$gamma.phi,
-        model.xi=tef$p.max,
-        model.dispersion.estimate=stm$dispersion,
-        model.tip.estimate=coefficients(tm)['istipTRUE'],
-        model.core.estimate=coefficients(tm)['core'],
-        model.height.estimate=coefficients(tm)['height'],
-        converged=tm$converged
+        model.xi=tpower,
+        model.dispersion.estimate=dispersion,
+        model.tip.estimate=stm[which(rownames(stm)=='istipTRUE'),1],
+        model.core.estimate=ifelse('core' %in% rownames(stm), stm[which(rownames(stm)=='core'),1], NA),
+        model.height.estimate=ifelse('height' %in% rownames(stm), stm[which(rownames(stm)=='height'),1], NA)
       )
-      
-      
+
     })
   })})
   
   # summarise results and calculate bootstrap confidence intervals
-  s <- broom::tidy(m)
-  s <- s[s$term %in% c('istipTRUE', 'core', 'height'), ,drop=FALSE]
-  s$term[grepl('istip', s$term)] <- 'tip'
-  s <- s[match(c('tip', 'core', 'height'), s$term),]
-  
+  sm <- sm[sm$term %in% c('istipTRUE', 'core', 'height'), ,drop=FALSE]
+  sm$term[grepl('istip', sm$term)] <- 'tip'
+  sm <- sm[match(c('tip', 'core', 'height'), sm$term),]
+  colnames(sm) <- c('term','estimate','std.error','statistic','p.value')
   
   keep <- !duplicated(boot_reps$rep)
   index <- which(boot_reps$rep[keep]==1)
@@ -146,7 +145,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   
   return(
     new_panfit(
-      summary = cbind(s,boot.ci),
+      summary = cbind(sm,boot.ci),
       model = m,
       data = dat,
       bootrap_replicates=boot_reps,

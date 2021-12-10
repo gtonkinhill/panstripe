@@ -34,7 +34,6 @@ plot_dist_params <- function(fit, plot=TRUE, text_size=14, color_pallete=6){
   
   dist_dat <- purrr::imap_dfr(fit, ~{
     rbind(.x$bootrap_replicates %>% 
-            dplyr::filter(converged) %>%
             dplyr::group_by(core) %>%
             dplyr::summarise(
               "value"=quantile(tpoisson.lambda, 0.5),
@@ -43,7 +42,6 @@ plot_dist_params <- function(fit, plot=TRUE, text_size=14, color_pallete=6){
             ) %>%
             tibble::add_column(parameter='Rate (Poisson mean)'),
           .x$bootrap_replicates %>% 
-            dplyr::filter(converged) %>%
             dplyr::group_by(core) %>%
             dplyr::summarise(
               "value"=quantile(tgamma.mean, 0.5),

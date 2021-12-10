@@ -24,7 +24,8 @@ Imports:
     patchwork,
     matrixStats,
     rlang,
-    readr
+    readr,
+    glmmTMB
 LinkingTo: Rcpp
 Suggests: 
     knitr,
