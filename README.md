@@ -16,28 +16,20 @@ In particular it aims to replace the dubious but popular pangenome
 accumulation curve. The package is currently under development so
 frequent changes are to be expected.
 
--   [panstripe](#panstripe)
-    -   [Installation](#installation)
-    -   [Quick Start](#quick-start)
-    -   [Citation](#citation)
-    -   [Comparing Pangenomes](#comparing-pangenomes)
-    -   [Open vs Closed](#open-vs-closed)
-    -   [Rate vs Size](#rate-vs-size)
-    -   [Plots](#plots)
-        -   [Pangenome fit](#pangenome-fit)
-        -   [Tree with presence/absence](#tree-with-presenceabsence)
-        -   [Inferred ancestral states](#inferred-ancestral-states)
-        -   [tSNE](#tsne)
-        -   [Accumulation curves](#accumulation-curves)
+-   [Installation](#installation)
+-   [Quick Start](#quick-start)
+-   [Citation](#citation)
+-   [Comparing Pangenomes](#comparing-pangenomes)
+-   [Open vs Closed](#open-vs-closed)
+-   [Rate vs Size](#rate-vs-size)
+-   [Plots](#plots)
+    -   [Pangenome fit](#pangenome-fit)
+    -   [Tree with presence/absence](#tree-with-presenceabsence)
+    -   [Inferred ancestral states](#inferred-ancestral-states)
+    -   [tSNE](#tsne)
+    -   [Accumulation curves](#accumulation-curves)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-# panstripe
-
-Panstripe improves the post processing of bacterial pangenome analyses.
-In particular it aims to replace the dubious but popular pangenome
-accumulation curve. The package is currently under development so
-frequent changes are to be expected.
 
 ## Installation
 
@@ -103,8 +95,8 @@ result$summary
 #> # A tibble: 2 x 5
 #>   term  estimate std.error statistic  p.value
 #>   <chr>    <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 tip     -0.181    0.0989     -1.83 6.75e- 2
-#> 2 core    -2.76     0.115     -24.1  6.40e-79
+#> 1 tip     -0.273     0.103     -2.64 8.53e- 3
+#> 2 core    -2.62      0.125    -20.9  1.34e-65
 ```
 
 ## Open vs Closed
@@ -127,14 +119,14 @@ sim_closed <- simulate_pan(rate = 0, ngenomes = 100)
 fit_closed <- panstripe(sim_closed$pa, sim_closed$tree)
 
 fit_closed$summary
-#>     term   estimate    std.error     statistic   p.value bootstrap CI (2.5%)
-#> 1    tip 21.8059015 2.528816e+03  8.622969e-03 0.9931289          21.5166987
-#> 2   core -0.1222603 4.112394e+03 -2.972972e-05 0.9999763          -1.4380312
-#> 3 height  0.0129709 6.776101e-02  1.914213e-01 0.8483978          -0.1498757
+#>     term    estimate    std.error     statistic   p.value bootstrap CI (2.5%)
+#> 1    tip 21.66934409 2.528894e+03  0.0085687054 0.9931721          21.2697405
+#> 2   core -0.48829934 4.170981e+03 -0.0001170706 0.9999067          -1.4602502
+#> 3 height  0.00128559 6.700751e-02  0.0191857566 0.9847128          -0.1902157
 #>   bootstrap CI (97.5%)
-#> 1           22.0596155
-#> 2            1.0643556
-#> 3            0.1774196
+#> 1           22.1680678
+#> 2            0.6988920
+#> 3            0.2383255
 ```
 
 ``` r
