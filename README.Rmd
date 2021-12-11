@@ -74,6 +74,7 @@ sim_slow <- simulate_pan(rate = 1e-4, ngenomes = 100)
 
 # Run panstripe
 fit_fast <- panstripe(sim_fast$pa, sim_fast$tree)
+
 fit_slow <- panstripe(sim_slow$pa, sim_slow$tree)
 
 # Compare the fits

@@ -64,13 +64,15 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   if (!is.na(max_height)){
     dat <- dat[height[tree$edge[,1]] <= max_height, ,drop=FALSE]
   }
-  
+
   # fit model
+  model <- stats::as.formula("acc ~ 0 + istip*core + height + height:core")
+  
   if (sum(dat$acc[!dat$istip])<3){
-    warning("Very few gene gain/loss events inferred in ancestral branches! Ignoring core term and fitting Poisson!")
-    m <- glmmTMB::glmmTMB(acc ~ istip, data = dat, family = poisson)
+    warning("Very few gene gain/loss events inferred in ancestral branches - fitting Poisson!")
+    m <- glmmTMB::glmmTMB(model, data = dat, family = poisson)
   } else {
-    m <- glmmTMB::glmmTMB(acc ~ istip*core + height + height:core, data = dat, family = glmmTMB::tweedie)
+    m <- glmmTMB::glmmTMB(model, data = dat, family = glmmTMB::tweedie)
   }
   sm <- summary(m)$coefficients$cond %>% 
     tibble::as_tibble(rownames = 'term')
@@ -87,19 +89,16 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
       
       if (sum(tdat$acc[!tdat$istip])<3){
         warning("Very few gene gain/loss events inferred in ancestral branches! Ignoring core term and fitting Poisson!")
-        tm <- glmmTMB::glmmTMB(acc ~ istip, data = tdat, family = poisson)
+        tm <- glmmTMB::glmmTMB(model, data = tdat, family = poisson)
         tpower <- NA
         dispersion <- NA
-        stm <- summary(tm)$coefficients$cond
       } else {
-        tm <- glmmTMB::glmmTMB(acc ~ istip*core + height + height:core, data = tdat, family = glmmTMB::tweedie)
+        tm <- glmmTMB::glmmTMB(model, data = tdat, family = glmmTMB::tweedie)
         tpower <- unname(plogis(tm$fit$par["thetaf"]) + 1)
         dispersion <- unname(exp(glmmTMB::fixef(tm)$disp))
-        stm <- summary(tm)$coefficients$cond
       }
+      stm <- summary(tm)$coefficients$cond
       
-      
-
       tp <- predict(tm, 
                     data.frame(core=seq(0, max(dat$core), max(dat$core)/100), 
                                height = seq(0, max(dat$core), max(dat$core)/100), 
@@ -123,8 +122,8 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
         model.xi=tpower,
         model.dispersion.estimate=dispersion,
         model.tip.estimate=stm[which(rownames(stm)=='istipTRUE'),1],
-        model.core.estimate=ifelse('core' %in% rownames(stm), stm[which(rownames(stm)=='core'),1], NA),
-        model.height.estimate=ifelse('height' %in% rownames(stm), stm[which(rownames(stm)=='height'),1], NA)
+        model.core.estimate=stm[which(rownames(stm)=='core'),1],
+        model.height.estimate=stm[which(rownames(stm)=='height'),1]
       )
 
     })

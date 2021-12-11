@@ -9,8 +9,8 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=1e-2, ngenomes = 100)
-#' simB <- simulate_pan(rate=1e-4, ngenomes = 100)
+#' simA <- simulate_pan(rate=0, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
+#' simB <- simulate_pan(rate=0, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
 #' fA <- panstripe(simA$pa, simA$tree, nboot=0)
 #' fB <- panstripe(simB$pa, simB$tree, nboot=0)
 #' comp <- compare_pangenomes(fA, fB)
@@ -28,16 +28,21 @@ compare_pangenomes <- function(fitA, fitB){
   dat <- purrr::imap_dfr(list(fitA, fitB), ~{
     tibble::add_column(.x$data, pangenome=LETTERS[[.y]], .before=1)
   })
-  dat$istip <- 1*dat$istip
+
   
   # fit model
-  model <- stats::as.formula("acc ~ core*istip + height + height:core + istip:pangenome + core:pangenome")
+  model <- stats::as.formula("acc ~ 0 + core*istip + height + height:core + istip:pangenome + core:pangenome")
   
-  m <- glmmTMB::glmmTMB(model, data = dat, family = glmmTMB::tweedie)
+  if (sum(dat$acc[!dat$istip])<3){
+    warning("Very few gene gain/loss events inferred in ancestral branches - fitting Poisson!")
+    m <- glmmTMB::glmmTMB(model, data = dat, family = poisson)
+  } else {
+    m <- glmmTMB::glmmTMB(model, data = dat, family = glmmTMB::tweedie)
+  }
   
   s <- summary(m)$coefficients$cond %>% 
     tibble::as_tibble(rownames = 'term')
-  s <- s[s$term %in% c('istip:pangenomeB', 'core:pangenomeB'), , drop=FALSE]
+  s <- s[s$term %in% c('istipTRUE:pangenomeB', 'core:pangenomeB'), , drop=FALSE]
   s$term <- ifelse(s$term=='core:pangenomeB', 'core', 'tip')
   colnames(s) <- c('term','estimate','std.error','statistic','p.value')
   
