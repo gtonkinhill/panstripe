@@ -45,7 +45,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   } else{
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
+      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
     }))
     dat <- tibble::tibble(
       acc=rowSums(anc_states)[tree$edge[,2]],
@@ -70,7 +70,7 @@ panstripe <- function(pa, tree, nboot=100, max_height=NA, mrsd=NA, quiet=FALSE, 
   
   if (sum(dat$acc[!dat$istip])<3){
     warning("Very few gene gain/loss events inferred in ancestral branches - fitting Poisson!")
-    m <- glmmTMB::glmmTMB(model, data = dat, family = poisson)
+    m <- glmmTMB::glmmTMB(model, data = dat, family = stats::poisson)
   } else {
     m <- glmmTMB::glmmTMB(model, data = dat, family = glmmTMB::tweedie)
   }

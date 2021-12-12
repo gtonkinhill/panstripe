@@ -79,10 +79,6 @@ We can also plot the difference between the fits.
 plot_pangenome_fits(list(
   open=fit, 
   closed=fit_closed), boot = TRUE)
-
-plot_dist_params(list(
-  open=fit, 
-  closed=fit_closed))
 ```
 
 #Investigate differences in the average size of gene gain/loss events
