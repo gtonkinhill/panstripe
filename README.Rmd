@@ -223,4 +223,6 @@ While we do not recommend the use of accumulation curves as they do not account 
 plot_acc(list(fast=sim_fast$pa, slow=sim_slow$pa))
 ```
 
+### Etymology
 
+The name panstripe is an adaptation of 'pinstripe', the name of a [long-nosed potoroo](https://en.wikipedia.org/wiki/Long-nosed_potoroo) who was a villain in the playstation game [Crash Bandicoot](https://crashbandicoot.fandom.com/wiki/Pinstripe_Potoroo). The name was chosen as the program relies on the output of panaroo (named after the potoroo).

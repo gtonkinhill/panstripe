@@ -29,6 +29,7 @@ frequent changes are to be expected.
     -   [Inferred ancestral states](#inferred-ancestral-states)
     -   [tSNE](#tsne)
     -   [Accumulation curves](#accumulation-curves)
+    -   [Etymology](#etymology)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -341,3 +342,12 @@ plot_acc(list(fast = sim_fast$pa, slow = sim_slow$pa))
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-14-1.png)<!-- -->
+
+### Etymology
+
+The name panstripe is an adaptation of ‘pinstripe’, the name of a
+[long-nosed potoroo](https://en.wikipedia.org/wiki/Long-nosed_potoroo)
+who was a villain in the playstation game [Crash
+Bandicoot](https://crashbandicoot.fandom.com/wiki/Pinstripe_Potoroo).
+The name was chosen as the program relies on the output of panaroo
+(named after the potoroo).
