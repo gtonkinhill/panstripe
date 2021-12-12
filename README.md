@@ -8,7 +8,7 @@ panstripe
 
 
 <p align="center">
-<img src="https://github.com/gtonkinhill/panaroo/blob/master/panaroo.png" alt="alt text" width="500">
+<img src="https://github.com/gtonkinhill/panstripe/blob/main/inst/vignette-supp/panstripe.png" alt="alt text" width="500">
 </p>
 
 Panstripe improves the post processing of bacterial pangenome analyses.
