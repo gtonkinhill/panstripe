@@ -122,12 +122,12 @@ indicates whether the branch occurs at the tip of the phylogeny and the
 
 #### bootstrap replicates
 
-A table with the inferred parameters for each of the bootstrapo
+A table with the inferred parameters for each of the bootstrap
 replicates that were run.
 
 #### tree/pa
 
-The data original provided to the `panstripe` function.
+The original data provided to the `panstripe` function.
 
 ## Comparing Pangenomes
 
@@ -139,7 +139,7 @@ considers the interaction term between the data sets and the `core`,
 **IMPORTANT:** It is important that the phylogenies for the pangenomes
 being compared are on the same scale. This can be achieved most easily
 by using time scaled phylogenies. Alternatively, it is possible to build
-a single phylogeny and partitioning it into each data set.
+a single phylogeny and partition it into each data set.
 
 Here, we simulate two pangenomes with different gene gain and loss
 rates, fit the model using `panstripe` and run the `compare_pangenomes`
@@ -148,12 +148,12 @@ function.
 A significant p-value for the `tip` term indicates that the two
 pangenomes differ in the rates of gene presence and absence assigned to
 the tips of the phylogeny. This is usually driven by either differences
-in the annotation error rates between data sets of differences in the
+in the annotation error rates between data sets or differences in the
 gain and loss of highly mobile elements that do not persist long enough
 to be observed in multiple genomes.
 
 A significant p-value for the `core` term indicates that two data sets
-have difference rates of gene gain and loss. This can then be
+have different rates of gene gain and loss. This can then be
 investigated in more detail by considering the estimates of the
 underlying parameters of the model using the `plot_dist_params`
 function.
