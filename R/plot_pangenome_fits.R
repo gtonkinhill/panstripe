@@ -5,6 +5,7 @@
 #' @description Plots the fitted pangenome tweedie regression model.
 #'
 #' @param fit the result of running the `panstripe` function. Multiple fits can be passed as a named list.
+#' @param ci whether or not to include the confidence interval ribbon (default=TRUE)
 #' @param boot whether to use estimated SE for confidence intervals (default) or bootstrap estimates.
 #' @param plot whether to generate the plot (default) or return a data.frame
 #' @param legend toggles the display of the legend on and off
@@ -20,10 +21,11 @@
 #' plot_pangenome_fits(fA, color_pallete=6)
 #' sim <- simulate_pan(rate=1e-2)
 #' fB <- panstripe(sim$pa, sim$tree, nboot=10)
-#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE)
+#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE, ci=FALSE)
 #'
 #' @export
 plot_pangenome_fits <- function(fit,
+                                ci=TRUE,
                                 boot=FALSE,
                                 plot=TRUE, 
                                 legend=TRUE,
@@ -84,13 +86,17 @@ plot_pangenome_fits <- function(fit,
   if (length(fit)>1) {
     gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=.data$core, y=.data$val, colour=.data$pangenome)) +
       ggplot2::geom_line() +
-      ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3) +
       ggplot2::geom_point(data = point_dat, ggplot2::aes(y=.data$acc, colour=.data$pangenome))
+    if (ci){
+      gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3)
+    }
   } else {
     gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=.data$core, y=.data$val)) +
       ggplot2::geom_line() +
-      ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper), alpha=0.3) +
       ggplot2::geom_point(data = point_dat, ggplot2::aes(y=.data$acc))
+    if (ci){
+      gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper), alpha=0.3)
+    }
   }
   
   gg <- gg + 

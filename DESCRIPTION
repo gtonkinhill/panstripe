@@ -23,7 +23,8 @@ Imports:
     matrixStats,
     rlang,
     readr,
-    glmmTMB
+    glmmTMB,
+    cplm
 LinkingTo: Rcpp
 Suggests: 
     knitr,

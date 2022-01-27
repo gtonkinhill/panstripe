@@ -6,6 +6,7 @@
 \usage{
 plot_pangenome_fits(
   fit,
+  ci = TRUE,
   boot = FALSE,
   plot = TRUE,
   legend = TRUE,
@@ -15,6 +16,8 @@ plot_pangenome_fits(
 }
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple fits can be passed as a named list.}
+
+\item{ci}{whether or not to include the confidence interval ribbon (default=TRUE)}
 
 \item{boot}{whether to use estimated SE for confidence intervals (default) or bootstrap estimates.}
 
@@ -39,6 +42,6 @@ fA <- panstripe(sim$pa, sim$tree, nboot=10)
 plot_pangenome_fits(fA, color_pallete=6)
 sim <- simulate_pan(rate=1e-2)
 fB <- panstripe(sim$pa, sim$tree, nboot=10)
-plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE)
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE, ci=FALSE)
 
 }
