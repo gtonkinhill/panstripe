@@ -14,10 +14,12 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
-#' simB <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
-#' fitA <- panstripe(simA$pa, simA$tree, boot_type='norm')
-#' fitB <- panstripe(simB$pa, simB$tree, boot_type='perc')
+#' simA <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
+#' simB <- simulate_pan(rate=1e-4, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
+#' fitA <- panstripe(simA$pa, simA$tree, boot_type='norm', nboot=10)
+#' fitA$summary
+#' fitB <- panstripe(simB$pa, simB$tree, boot_type='norm', nboot=10)
+#' fitB$summary
 #' comp <- compare_pangenomes(fitA, fitB)
 #'
 #' @export

@@ -18,7 +18,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0, mean_trans_size=5, fn_error_rate=1, fp_error_rate=1)
+#' sim <- simulate_pan(rate=1e-3, mean_trans_size=5, fn_error_rate=1, fp_error_rate=1)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -61,14 +61,17 @@ panstripe <- function(pa, tree, nboot=1000,
   } else{
     # use maximum parsimony
     temp_tree <- tree
+    temp_tree2 <- tree
     anc_states <- do.call(cbind, purrr::map(index, ~{
       return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
     }))
     temp_tree$edge.length <- rowSums(anc_states)[tree$edge[,2]]
+    temp_tree2$edge.length <- rowSums(anc_states)[tree$edge[,1]]
   }
   
   dat <- tibble::tibble(
     acc=ape::node.depth.edgelength(temp_tree),
+    # prev_acc=ape::node.depth.edgelength(temp_tree2),
     core=ape::node.depth.edgelength(tree),
     istip=rep(c(TRUE, FALSE), c(tree$Nnode+1, tree$Nnode))
   )
@@ -87,7 +90,7 @@ panstripe <- function(pa, tree, nboot=1000,
   # fit model
   if (is.character(family) && (family=="Tweedie")){
     m <- fit_tweedie(model, data = dat)
-    # m <- cpglm(model, data = dat)
+    # m <- cplm::cpglm(model, data = dat)
     coef <- c(m$coefficients, m$p, m$phi)
   } else {
     m <- stats::glm(model, data = dat, family=family)
@@ -96,7 +99,7 @@ panstripe <- function(pa, tree, nboot=1000,
   names(coef) <- c('Intercept', 'tip', 'core', 'p', 'phi')
 
   # run bootstrap
-  boot_reps <- boot::boot(t(anc_states[tree$edge[,2],]), fit_model,
+  boot_reps <- boot::boot(t(anc_states), fit_model,
              R = nboot,
              stype='i',
              tree=tree, model=model, family=family)
@@ -158,9 +161,12 @@ fit_tweedie <- function(model, data){
 fit_model <- function(anc, indices=1:ncol(anc), tree, model, family){
   stopifnot(length(indices)==nrow(anc))
   temp_tree <- tree
-  temp_tree$edge.length <- colSums(anc[indices,])
+  temp_tree2 <- tree
+  temp_tree$edge.length <- colSums(anc[indices,tree$edge[,2]])
+  temp_tree2$edge.length <- colSums(anc[indices,tree$edge[,1]])
   tdat <- tibble::tibble(
     acc=ape::node.depth.edgelength(temp_tree),
+    # prev_acc=ape::node.depth.edgelength(temp_tree2),
     core=ape::node.depth.edgelength(tree),
     istip=rep(c(TRUE, FALSE), c(tree$Nnode+1, tree$Nnode))
   )
