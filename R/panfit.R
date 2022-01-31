@@ -13,13 +13,13 @@
 #' @param pa matrix, data.frame or tibble
 #' @return A panfit object
 #'
-new_panfit <- function(summary, model, data, ci_samples, 
+new_panfit <- function(summary, model, data, boot_samples, 
                        tree, pa){
   
   stopifnot(any(class(summary) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(model) %in% c('NULL','glm','cplm','cpglm','bcplm')))
   stopifnot(any(class(data) %in% c('NULL','tbl','data.frame')))
-  stopifnot(any(class(ci_samples) %in% c('NULL','tbl','data.frame')))
+  stopifnot(any(class(boot_samples) %in% c('NULL','boot')))
   stopifnot(any(class(tree) %in% c('NULL','phylo')))
   stopifnot(any(class(pa) %in% c('NULL','tbl','data.frame','matrix')))
   
@@ -29,7 +29,7 @@ new_panfit <- function(summary, model, data, ci_samples,
         summary = summary,
         model = model,
         data = data,
-        ci_samples=ci_samples,
+        ci_samples=boot_samples,
         tree=tree,
         pa=pa),
       class = "panfit"
@@ -65,7 +65,7 @@ validate_panfit <- function(x) {
         call. = FALSE
       )
     }
-    if(!all(c('term','estimate','std.error','statistic',
+    if(!all(c('term','estimate','p.value',
               '2.5%',
               '97.5%') %in% colnames(x$summary))) {
       stop(
@@ -96,6 +96,6 @@ validate_panfit <- function(x) {
   }
   
   # check ci samplles
-  if(!any(class(x$bootrap_replicates) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `ci_samples`", call. = FALSE)
+  if(!class(x$boot_samples) %in% c('NULL','boot')) stop("Invalid class for `boot_samples`", call. = FALSE)
   
 }

@@ -11,31 +11,32 @@
 #' @param quiet whether to print progress information (default=FALSE)
 #' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
 #' @param stochastic.mapping use stochastic mapping in place of maximum parsimony for ancestral state reconstruction (experimental)
-#' @param method approach used to fit GLM. Can be either 'ML' for Maximum Likelihood or 'Bayesian'.
+#' @param boot_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.
+#' @param conf A scalar indicating the confidence level of the required intervals (default=0.95).
 #'
 #' @return a panfit object with the resulting parameter estimates and bootstrap replicates
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0, mean_trans_size=2, fn_error_rate=2, fp_error_rate=2)
+#' sim <- simulate_pan(rate=0, mean_trans_size=5, fn_error_rate=1, fp_error_rate=1)
 #' pa <- sim$pa
 #' tree <- sim$tree
-#' nboot <- 10
+#' nboot <- 100
 #' family <- 'Tweedie'
-#' res <- panstripe(sim$pa, sim$tree, nboot=10)
+#' boot_type='bca'
+#' conf=0.95
+#' res <- panstripe(sim$pa, sim$tree, boot_type='perc')
 #' res$summary
 #'
 #' @export
-panstripe <- function(pa, tree, nboot=100,
+panstripe <- function(pa, tree, nboot=1000,
                       quiet=FALSE, stochastic.mapping=FALSE, 
-                      family='Tweedie', method='ML'){
+                      family='Tweedie', boot_type='bca', conf=0.95){
   
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
   if(!all(rownames(pa) %in% tree$tip.label)) stop('taxa labels in p/a matrix and tree do not match!')
-  if(!method %in% c('Bayesian','ML')) stop("'method' must be either 'ML' or 'Bayesian'")
-  if((method=='Bayesian') && (family!="Tweedie")) stop("Bayesian implementation only available for 'Tweedie' family")
-  
+
   if (!(is.character(family) && (family=="Tweedie"))){
     if (is.character(family)) 
       family <- get(family, mode = "function", envir = parent.frame())
@@ -73,111 +74,57 @@ panstripe <- function(pa, tree, nboot=100,
   )
   
   # check for all 0's
-  if (method=="ML"){
-    if (sum(dat$acc[!dat$istip])==0) {
-      warning("No gene gains/losses identified on internal branches! Separation may be a problem and setting method='Bayesian' method is recommended.")
-    } else if (sum(dat$acc[dat$istip])==0) {
-      warning("No gene gains/losses identified at phylogeny tips! Separation may be a problem and setting method='Bayesian' method is recommended.")
-    }
+  if (sum(dat$acc[!dat$istip])==0) {
+    warning("No gene gains/losses identified on internal branches! Separation may be a problem.")
+  } else if (sum(dat$acc[dat$istip])==0) {
+    warning("No gene gains/losses identified at phylogeny tips! Separation may be a problem.")
   }
-
-  # fit model
-  formula <- stats::as.formula("acc ~ istip + core")
+  
   
   # fit model
-  if (method=="Bayesian"){
-    m <- bcplm(formula, data = dat)
-
-    sm <- cbind(m$summary$statistics[,c('Mean','SD')],
-                m$summary$quantiles[,c('2.5%','97.5%')])%>%
-      tibble::as_tibble(rownames = 'term') %>%
-      tibble::add_column(t.value=NA, .before = '2.5%') %>%
-      tibble::add_column(p.value=NA, .before = '2.5%')
-    
-    samples <- purrr::imap_dfr(m$sims.list, ~{
-      tibble::as_tibble(.x) %>%
-        tibble::add_column(sample=1:nrow(.x), .before=1) %>%
-        tibble::add_column(chain=.y, .before=1)
-    })
-    
+  model <- stats::as.formula("acc ~ istip + core")
+  
+  # fit model
+  if (is.character(family) && (family=="Tweedie")){
+    m <- fit_tweedie(model, data = dat)
+    # m <- cpglm(model, data = dat)
+    coef <- c(m$coefficients, m$p, m$phi)
   } else {
-    if (is.character(family) && (family=="Tweedie")){
-      m <- cpglm(formula, data = dat) 
-    } else {
-      m <- stats::glm(formula, data = dat, family=family)
-    }
-    
-    invisible(capture.output({sm <- summary(m)$coefficients %>% 
-      tibble::as_tibble(rownames = 'term')}))
-    
-    if (!quiet) cat('Running bootstrap...\n')
-    boot_reps <- purrr::map_dfr(1:nboot, ~{
-      if (.x==1){
-        tdat <- dat
-      } else {
-        tdat <- dat[sample(nrow(dat), size = nrow(dat), replace = TRUE),]
-      }
-      
-      if (is.character(family) && (family=="Tweedie")){
-        tm <- cpglm(formula, data = tdat)
-        dispersion <- tm$phi
-        tpower <- tm$p
-      } else {
-        tm <- stats::glm(formula, data = tdat, family=family)
-        tpower <- NA
-        dispersion <- NA
-      }
-      
-      invisible(capture.output({stm <- summary(tm)$coefficients %>% 
-        tibble::as_tibble(rownames = 'term')}))
-
-      tp <- predict(tm, 
-                    data.frame(core=seq(0, max(dat$core), max(dat$core)/100), 
-                               istip=FALSE), 
-                    type="response")
-      
-      tout <- convert_tweedie(xi=tpower,
-                              mu=tp,
-                              phi=dispersion)
-      
-      if (!quiet) cat(paste0(round(.x / nboot * 100), '% completed\r'))
-      if (!quiet & (.x == nboot)) cat('Done\n')
-      
-      data.frame(
-        rep=rep(.x,length(tp)),
-        core=seq(0, max(dat$core), max(dat$core)/100),
-        tmean=tp,
-        tpoisson.lambda=tout$poisson.lambda,
-        tgamma.mean=tout$gamma.mean,
-        tgamma.phi=tout$gamma.phi,
-        model.xi=tpower,
-        model.dispersion.estimate=dispersion,
-        model.intercept.estimate=stm$Estimate[which(stm$term=='(Intercept)')],
-        model.tip.estimate=stm$Estimate[which(stm$term=='istipTRUE')],
-        model.core.estimate=stm$Estimate[which(stm$term=='core')]
-      )
-    })
-    
-    keep <- !duplicated(boot_reps$rep)
-    index <- which(boot_reps$rep[keep]==1)
-    samples <-  tibble::as_tibble(rbind(norm_boot(boot_reps$model.intercept.estimate[keep], index = index),
-                      norm_boot(boot_reps$model.tip.estimate[keep], index = index),
-                      norm_boot(boot_reps$model.core.estimate[keep], index = index)), .name_repair = 'minimal')
-    sm <- cbind(sm,samples)
+    m <- stats::glm(model, data = dat, family=family)
+    coef <- c(m$coefficients, NA, NA)
   }
+  names(coef) <- c('Intercept', 'tip', 'core', 'p', 'phi')
+
+  # run bootstrap
+  boot_reps <- boot::boot(t(anc_states[tree$edge[,2],]), fit_model,
+             R = nboot,
+             stype='i',
+             tree=tree, model=model, family=family)
   
-  # summarise results and calculate bootstrap confidence intervals
-  sm <- sm[sm$term %in% c('istipTRUE', 'core'), ,drop=FALSE]
-  sm$term[grepl('istip', sm$term)] <- 'tip'
-  sm <- sm[match(c('tip', 'core'), sm$term),]
-  colnames(sm) <- c('term','estimate','std.error','statistic','p.value','2.5%','97.5%')
+  # calculate CIs and p-values
+  summary <- purrr::map_dfr(1:5, ~{
+    transformation <- 'identity'
+    if (.x==4) transformation <- 'logit'
+    if (.x==5) transformation <- 'inverse'
+    
+    setNames(c(names(coef)[[.x]], coef[[.x]],
+      boot_ci_pval(boot_reps, index=.x, type=boot_type,
+                 theta_null=0, ci_conf=conf,
+                 transformation=transformation)),
+      c('term', 'estimate', 'p-value', '2.5%', '97.5%'))
+  
+  })
+  summary$estimate <- signif(as.numeric(summary$estimate), 4)
+  summary$`2.5%` <- signif(as.numeric(summary$`2.5%`), 5)
+  summary$`97.5%` <- signif(as.numeric(summary$`97.5%`), 5)
+  summary$`p-value`[4:5] <- NA
   
   return(
-    new_panfit(
-      summary = sm,
+    panstripe:::new_panfit(
+      summary = summary,
       model = m,
       data = dat,
-      ci_samples=samples,
+      boot_samples=boot_reps,
       tree=tree,
       pa=pa
     )
@@ -192,11 +139,96 @@ convert_tweedie <- function(xi, mu, phi){
   ))
 }
 
-norm_boot <- function(t, index, conf=0.95){
-  t0 <- t[[index]]
-  var.t0 <- stats::var(t)
-  bias <- mean(t) - t0
-  merr <- sqrt(var.t0) * stats::qnorm((1 + conf)/2)
-  return(c(t0 - bias - merr, 
-           t0 - bias + merr))
+
+twd_llk <- function(p, model, data) {
+  tm <- stats::glm(model, data, family = statmod::tweedie(var.power = p, link.power = 0))
+  tsm <- summary(tm)
+  -sum(log(tweedie::dtweedie(y = tm$y, mu = tm$fitted.values, phi = tsm$dispersion, power = p)))
 }
+
+fit_tweedie <- function(model, data){
+  op <- stats::optimise(twd_llk, lower = 1, upper = 2, model=model, data=data)
+  tm <- stats::glm(model, data, family = statmod::tweedie(var.power = op$minimum, link.power = 0))
+  stm <- summary(tm)
+  tm$p <- op$minimum
+  tm$phi <- stm$dispersion
+  return(tm)
+}
+
+fit_model <- function(anc, indices=1:ncol(anc), tree, model, family){
+  stopifnot(length(indices)==nrow(anc))
+  temp_tree <- tree
+  temp_tree$edge.length <- colSums(anc[indices,])
+  tdat <- tibble::tibble(
+    acc=ape::node.depth.edgelength(temp_tree),
+    core=ape::node.depth.edgelength(tree),
+    istip=rep(c(TRUE, FALSE), c(tree$Nnode+1, tree$Nnode))
+  )
+  
+  if (is.character(family) && (family=="Tweedie")){
+    tm <- fit_tweedie(model, data = tdat)
+    # tm <- cpglm(model, data = tdat)
+    coef <- c(tm$coefficients, tm$p, tm$phi)
+  } else {
+    tm <- stats::glm(model, data = tdat, family=family)
+    coef <- c(tm$coefficients, NA, NA)
+  }
+  
+  return(coef)
+}
+
+boot_ci_pval <- function(boot_res, index, type, 
+                         theta_null=0, 
+                         precision=NULL, 
+                         ci_conf=0.95,
+                         transformation='identity') {
+  
+  if (!transformation %in% c('identity','logit','inverse')) stop('Invalid transformation!')
+  
+  if (transformation=='logit'){
+    ll <- stats::make.link('logit')
+    h <- function(x) ll$linkfun(x-1)
+    hinv <- function(x) ll$linkinv(x)+1
+    hdot <- function(x) ll$mu.eta(x)
+  } else if (transformation=='inverse'){
+    h <- function(x) 1/x
+    hinv <- function(x) 1/x
+    hdot <- function(x) -1/x^2
+  } else {
+    h <- function(x) x
+    hinv <- function(x) x
+    hdot <- function(x) 1
+  }
+  
+  if (is.null(precision)){
+    precision = 1/boot_res$R  
+  }
+  
+  #calculate p-value by inverting the corresponding confidence intervals, as described in Section 3.12 in Hall (1992)
+  alpha_seq <- seq(precision, 1 - 1e-16, precision)
+  ci <- suppressWarnings({boot::boot.ci(boot_res, conf = 1 - alpha_seq, 
+                                        type = type, index=index,
+                                        h = h, hinv = hinv, hdot = hdot)})
+  bounds <- switch(type, 
+                   norm = ci$normal[, 2:3],
+                   basic = ci$basic[,4:5],
+                   stud = ci$student[, 4:5],
+                   perc = ci$percent[, 4:5], 
+                   bca = ci$bca[, 4:5])
+  alpha <- alpha_seq[which.min(theta_null >= bounds[, 1] & 
+                                 theta_null <= bounds[, 2])]
+  
+  #calculate CI
+  ci <- suppressWarnings({boot::boot.ci(boot_res, conf = ci_conf, 
+                                        type = type, index=index,
+                                        h = h, hinv = hinv, hdot = hdot)})
+  bounds <- switch(type, 
+                   norm = ci$normal[, 2:3],
+                   basic = ci$basic[,4:5],
+                   stud = ci$student[, 4:5],
+                   perc = ci$percent[, 4:5], 
+                   bca = ci$bca[, 4:5])
+  
+  return(c(alpha, sort(bounds)))
+}
+

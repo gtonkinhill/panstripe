@@ -23,10 +23,10 @@ Compares pangenomes using anova
 }
 \examples{
 
-simA <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=0, fp_error_rate=0)
+simA <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
 simB <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
-fitA <- panstripe(simA$pa, simA$tree, nboot=0)
-fitB <- panstripe(simB$pa, simB$tree, nboot=0)
+fitA <- panstripe(simA$pa, simA$tree, boot_type='norm')
+fitB <- panstripe(simB$pa, simB$tree, boot_type='norm')
 comp <- compare_pangenomes(fitA, fitB)
 
 }
