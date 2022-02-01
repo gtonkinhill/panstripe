@@ -21,7 +21,7 @@
 #' fitA$summary
 #' fitB <- panstripe(simB$pa, simB$tree, nboot=10, ci_type='perc')
 #' fitB$summary
-#' comp <- compare_pangenomes(fitA, fitB)
+#' comp <- compare_pangenomes(fitA, fitB, ci_type='perc')
 #'
 #' @export
 compare_pangenomes <- function(fitA, fitB, family="Tweedie", ci_type='bca', conf=0.95, nboot=100){

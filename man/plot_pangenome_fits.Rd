@@ -38,10 +38,10 @@ Plots the fitted pangenome tweedie regression model.
 \examples{
 
 sim <- simulate_pan(rate=0)
-fA <- panstripe(sim$pa, sim$tree, nboot=10)
+fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 plot_pangenome_fits(fA, color_pallete=6)
 sim <- simulate_pan(rate=1e-2)
-fB <- panstripe(sim$pa, sim$tree, nboot=10)
+fB <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE, ci=FALSE)
 
 }

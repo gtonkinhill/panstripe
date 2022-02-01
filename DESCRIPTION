@@ -16,14 +16,12 @@ Imports:
     tibble,
     dplyr,
     magrittr,
-    broom,
     Rtsne,
     ggtree,
     patchwork,
     matrixStats,
     rlang,
     readr,
-    cplm,
     boot
 LinkingTo: Rcpp
 Suggests: 

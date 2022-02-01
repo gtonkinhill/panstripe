@@ -17,10 +17,10 @@
 #' @examples
 #'
 #' sim <- simulate_pan(rate=0)
-#' fA <- panstripe(sim$pa, sim$tree, nboot=10)
+#' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 #' plot_pangenome_fits(fA, color_pallete=6)
-#' sim <- simulate_pan(rate=1e-2)
-#' fB <- panstripe(sim$pa, sim$tree, nboot=10)
+#' sim <- simulate_pan(rate=1e-3)
+#' fB <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE, ci=FALSE)
 #'
 #' @export
@@ -42,34 +42,31 @@ plot_pangenome_fits <- function(fit,
     fit <- list(fit)
   }
   
-  if (boot){
-    fit_dat <- purrr::imap_dfr(fit, ~{
-      .x$bootrap_replicates %>%
-        dplyr::group_by(core) %>%
-        dplyr::summarise(
-          val=tmean[which(rep==1)],
-          lower=quantile(tmean, 0.025),
-          upper=quantile(tmean, 0.975)) %>%
-        tibble::add_column(pangenome=.y, .before = 1)
-    })
-  } else {
-    fit_dat <- purrr::imap_dfr(fit, ~{
-      p <- predict(.x$model,
-                   data.frame(core=seq(0, max(.x$data$core), max(.x$data$core)/100), 
-                              height = seq(0, max(.x$data$core), max(.x$data$core)/100), 
-                              istip=FALSE), 
-                   se.fit = TRUE)
-      ilink <- family(.x$model)$linkinv
-      
-      tibble::tibble(
-        pangenome=.y,
-        core=seq(0, max(.x$data$core), max(.x$data$core)/100),
-        val=ilink(p$fit),
-        lower=ilink(p$fit - (2 * p$se.fit)),
-        upper=ilink(p$fit + (2 * p$se.fit))
-      )
-    })
-  }
+  fit_dat <- purrr::imap_dfr(fit, ~{
+    p <- predict(.x$model,
+                 data.frame(core=rep(max(.x$data$depth)/100, 101), 
+                            depth = seq(0, max(.x$data$depth), max(.x$data$depth)/100), 
+                            istip=FALSE), 
+                 se.fit = TRUE)
+    ilink <- family(.x$model)$linkinv
+    
+    temp_tree <- .x$tree
+    temp_tree$edge.length <- .x$data$acc
+    
+    df <- tibble(
+      core = ape::node.depth.edgelength(tree),
+      acc = ape::node.depth.edgelength(temp_tree)
+    )
+    
+    
+    tibble::tibble(
+      pangenome=.y,
+      core=seq(0, max(.x$data$depth), max(.x$data$depth)/100),
+      val=ilink(p$fit),
+      lower=ilink(p$fit - (2 * p$se.fit)),
+      upper=ilink(p$fit + (2 * p$se.fit))
+    )
+  })
   
   
   point_dat <- purrr::imap_dfr(fit, ~{

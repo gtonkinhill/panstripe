@@ -17,7 +17,7 @@ new_panfit <- function(summary, model, data, boot_samples,
                        tree, pa){
   
   stopifnot(any(class(summary) %in% c('NULL','tbl','data.frame')))
-  stopifnot(any(class(model) %in% c('NULL','glm','cplm','cpglm','bcplm')))
+  stopifnot(any(class(model) %in% c('NULL','glm')))
   stopifnot(any(class(data) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(boot_samples) %in% c('NULL','boot')))
   stopifnot(any(class(tree) %in% c('NULL','phylo')))
@@ -65,9 +65,9 @@ validate_panfit <- function(x) {
         call. = FALSE
       )
     }
-    if(!all(c('term','estimate','p.value',
-              '2.5%',
-              '97.5%') %in% colnames(x$summary))) {
+    if(!all(c('term','estimate','p.value','std.error',
+              'bootstrap CI 2.5%',
+              'bootstrap CI 97.5%') %in% colnames(x$summary))) {
       stop(
         "Invalid column names in `summary` data.frame",
         call. = FALSE
@@ -76,12 +76,12 @@ validate_panfit <- function(x) {
   }
   
   # check model
-  if(!any(class(x$model) %in% c('NULL','glm','cplm','cpglm','bcplm'))) stop("Invalid class for `model`", call. = FALSE)
+  if(!any(class(x$model) %in% c('NULL','glm'))) stop("Invalid class for `model`", call. = FALSE)
   
   # check data
   if(!any(class(x$data) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `data`", call. = FALSE)
   if (!is.null(x$data)){
-    if(ncol(x$data)!=3) {
+    if(ncol(x$data)!=4) {
       stop(
         "There must be 4 columns in `data` data.frame",
         call. = FALSE
