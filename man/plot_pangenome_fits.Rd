@@ -6,8 +6,8 @@
 \usage{
 plot_pangenome_fits(
   fit,
+  type = "cumulative",
   ci = TRUE,
-  boot = FALSE,
   plot = TRUE,
   legend = TRUE,
   text_size = 14,
@@ -17,9 +17,9 @@ plot_pangenome_fits(
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple fits can be passed as a named list.}
 
-\item{ci}{whether or not to include the confidence interval ribbon (default=TRUE)}
+\item{type}{either 'cumulative' (default) or 'individual'. Indicates whether or not to plot the cumulative sum of core and accessory branch lengths.}
 
-\item{boot}{whether to use estimated SE for confidence intervals (default) or bootstrap estimates.}
+\item{ci}{whether or not to include the confidence interval ribbon (default=TRUE)}
 
 \item{plot}{whether to generate the plot (default) or return a data.frame}
 
@@ -42,6 +42,7 @@ fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 plot_pangenome_fits(fA, color_pallete=6)
 sim <- simulate_pan(rate=1e-2)
 fB <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, boot=FALSE, ci=FALSE)
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='cumulative')
 
 }
