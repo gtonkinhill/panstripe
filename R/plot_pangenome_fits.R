@@ -18,6 +18,7 @@
 #'
 #' sim <- simulate_pan(rate=0)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+#' plot_pangenome_fits(fA, color_pallete=6, type='individual')
 #' plot_pangenome_fits(fA, color_pallete=6)
 #' sim <- simulate_pan(rate=1e-2)
 #' fB <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
@@ -100,7 +101,7 @@ plot_pangenome_fits <- function(fit,
         pangenome=.y,
         acc = ape::node.depth.edgelength(temp_tree),
         core = ape::node.depth.edgelength(.x$tree),
-        istip = rep(c(TRUE, FALSE), each=c(.x$tree$Nnode+1, .x$tree$Nnode))
+        istip = rep(c(TRUE, FALSE), c(.x$tree$Nnode+1, .x$tree$Nnode))
       )
     })
   } else {
