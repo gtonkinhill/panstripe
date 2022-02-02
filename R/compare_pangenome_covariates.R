@@ -13,23 +13,22 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=1e-4, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-#' simB <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-#' simC <- simulate_pan(rate=1e-2, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-#' simD <- simulate_pan(rate=1e-2, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-#' simE <- simulate_pan(rate=1e-2, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-#' fits <- purrr::map(list(A=simA, B=simB, C=simC, D=simD, E=simE), ~{
+#' simA <- simulate_pan(rate=1e-4, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
+#' simB <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
+#' simC <- simulate_pan(rate=1e-2, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
+#' fits <- purrr::map(list(A=simA, B=simB, C=simC), ~{
 #'   panstripe(.x$pa, .x$tree, nboot=10, ci_type='perc')
 #' })
 #' 
 #' covariates <- tibble::tibble(
-#'   pangenome=c('A','B','C','D','E'),
-#'   dummy=c(1,2,3.1,3.2,2.9)
+#'   pangenome=c('A','B','C'),
+#'   dummy=c(1,2,3)
 #' )
 #' comp <- compare_pangenome_covariates(fits, covariates)
+#' comp$summary
 #'
 #' @export
-compare_pangenome_covariates <- function(fits, covariates, keep='all', ci_type='bca', conf=0.95, nboot=100){
+compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', keep='all', ci_type='norm', conf=0.95, nboot=100){
   
   # input checks
   if (class(fits) != 'list') stop('fits must be a list of panfit objects!')
@@ -58,7 +57,12 @@ compare_pangenome_covariates <- function(fits, covariates, keep='all', ci_type='
                                      paste('depth', keep, sep=':'),
                                      paste('istip', keep, sep=':'),
                                      paste('core', keep, sep=':')), collapse = ' + '))
-  m <- fit_tweedie(model, dat)
+  
+  if (family=="Tweedie"){
+    m <- fit_tweedie(model, dat)  
+  } else {
+    m <- stats::glm(model, dat, family = family)
+  }
 
   s <- summary(m)$coefficients %>% 
     tibble::as_tibble(rownames = 'term')
@@ -73,7 +77,7 @@ compare_pangenome_covariates <- function(fits, covariates, keep='all', ci_type='
   boot_reps <- boot::boot(dat, fit_model, 
                           R = nboot,
                           stype='i',
-                          tree=tree, model=model, family='Tweedie', boot_type='branch')
+                          tree=tree, model=model, family=family, boot_type='branch')
   
   ci <- purrr::map_dfr(indices, ~{
     df <- tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
@@ -83,8 +87,8 @@ compare_pangenome_covariates <- function(fits, covariates, keep='all', ci_type='
     return(df)
   })
   
-  s$`bootstrap CI 2.5%` <- signif(ci[,1], 5)
-  s$`bootstrap CI 97.5%` <- signif(ci[,2], 5)
+  s$`bootstrap CI 2.5%` <- signif(ci$V1, 5)
+  s$`bootstrap CI 97.5%` <- signif(ci$V2, 5)
 
   return(list(
     summary=s,

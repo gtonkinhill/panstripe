@@ -24,8 +24,8 @@ Plots the fitted pangenome tweedie regression model.
 \examples{
 
 sim <- simulate_pan(rate=1e-3)
-fA <- panstripe(sim$pa, sim$tree, nboot=10)
-plot_dist_params(fA)
-plot_dist_params(list(a=fA,b=fA))
+fit <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+plot_dist_params(fit)
+plot_dist_params(list(a=fit,b=fit))
 
 }

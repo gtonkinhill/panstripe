@@ -145,15 +145,6 @@ panstripe <- function(pa, tree, nboot=1000,
   )
 }
 
-convert_tweedie <- function(xi, mu, phi){
-  return(list(
-    poisson.lambda=(mu^(2-xi))/(phi*(2-xi)),
-    gamma.mean=(2-xi)*phi*(mu^(xi-1)),
-    gamma.phi=(2-xi)*(xi-1)*(phi^2)*(mu^(2*(xi-1)))
-  ))
-}
-
-
 twd_llk <- function(p, model, data) {
   tm <- stats::glm(model, data, family = statmod::tweedie(var.power = p, link.power = 0))
   tsm <- summary(tm)
