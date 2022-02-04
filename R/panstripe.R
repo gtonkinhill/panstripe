@@ -18,7 +18,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=1e-3, mean_trans_size=5, fn_error_rate=0, fp_error_rate=0)
+#' sim <- simulate_pan(rate=1e-4, mean_trans_size=5, fn_error_rate=1, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -26,18 +26,19 @@
 #' ci_type='perc'
 #' boot_type='branch'
 #' conf=0.95
-#' res <- panstripe(sim$pa, sim$tree, ci_type='norm', boot_type='branch', nboot=1000)
+#' res <- panstripe(sim$pa, sim$tree, ci_type='norm', boot_type='branch', nboot=100)
 #' res$summary
 #'
 #' @export
 panstripe <- function(pa, tree, nboot=1000,
                       quiet=FALSE, stochastic.mapping=FALSE, 
+                      min_depth=NULL,
                       family='Tweedie', ci_type='bca', boot_type='branch', conf=0.95){
   
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
   if(!all(rownames(pa) %in% tree$tip.label)) stop('taxa labels in p/a matrix and tree do not match!')
-
+  
   if (!(is.character(family) && (family=="Tweedie"))){
     if (is.character(family)) 
       family <- get(family, mode = "function", envir = parent.frame())
@@ -74,9 +75,13 @@ panstripe <- function(pa, tree, nboot=1000,
     )
   }
   
-  # add depth
-  dat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,2]]
-
+  # add depth and filter if requested
+  dat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,1]]
+  
+  if (!is.null(min_depth)){
+    dat <- dat[dat$depth>=min_depth,]
+  }
+  
   # check for all 0's
   if (sum(dat$acc[!dat$istip])==0) {
     warning("No gene gains/losses identified on internal branches! Separation may be a problem.")
@@ -85,7 +90,7 @@ panstripe <- function(pa, tree, nboot=1000,
   }
   
   # fit model
-  model <- stats::as.formula("acc ~ istip + core + depth")
+  model <- stats::as.formula("acc ~ istip + core + depth + istip:core")
   
   # fit model
   if (is.character(family) && (family=="Tweedie")){
@@ -97,42 +102,56 @@ panstripe <- function(pa, tree, nboot=1000,
   }
   
   sm <- summary(m)
-  
+  coef_names <- strsplit(as.character(model), ' \\+ ')[[3]]
   s <- tibble::tibble(
-    term = c('Intercept', 'tip', 'core', 'depth', 'p', 'phi'),
+    term = c('Intercept', coef_names, 'p', 'phi'),
     estimate = coef,
     std.error=c(sm$coefficients[,2], NA, NA),
     statistic=c(sm$coefficients[,3], NA, NA),
     p.value = c(sm$coefficients[,4], NA, NA)
   )
-
+  
   # run bootstrap
-  if (boot_type=='gene'){
-    boot_reps <- boot::boot(t(anc_states), fit_model,
-                            R = nboot,
-                            stype='i',
-                            tree=tree, model=model, family=family, boot_type='gene')
+  if (nboot>1){
+    if (boot_type=='gene'){
+      boot_reps <- boot::boot(t(anc_states), fit_model,
+                              R = nboot,
+                              stype='i',
+                              tree=tree, min_depth=min_depth, model=model, family=family, boot_type='gene')
+    } else {
+      boot_reps <- boot::boot(dat, fit_model,
+                              R = nboot,
+                              stype='i',
+                              tree=tree, min_depth=min_depth, model=model, family=family, boot_type='branch')
+    }
+    
+    # calculate CIs and p-values
+    mindex <- length(coef_names) + 1
+    if (is.character(family) && (family=="Tweedie")) mindex <- mindex + 2
+    ci <- do.call(rbind, purrr::map(1:mindex, ~{
+      transformation <- 'identity'
+      if (s$term[[.x]]=='p') transformation <- 'logit'
+      if (s$term[[.x]]=='phi') transformation <- 'inverse'
+      
+      boot_ci_pval(boot_reps, index=.x, type=ci_type,
+                                       theta_null=0, ci_conf=conf,
+                                       transformation=transformation)
+      
+    }))
+    
+    if (is.character(family) && (family=="Tweedie")){
+      s$`bootstrap CI 2.5%` <- signif(as.numeric(ci[,1]), 5)
+      s$`bootstrap CI 97.5%` <- signif(as.numeric(ci[,2]), 5)
+    } else {
+      s$`bootstrap CI 2.5%` <- c(signif(as.numeric(ci[,1]), 5), NA, NA)
+      s$`bootstrap CI 97.5%` <- c(signif(as.numeric(ci[,2]), 5), NA, NA)
+    }
   } else {
-    boot_reps <- boot::boot(dat, fit_model,
-                            R = nboot,
-                            stype='i',
-                            tree=tree, model=model, family=family, boot_type='branch')
+    s$`bootstrap CI 2.5%` <- NA
+    s$`bootstrap CI 97.5%` <- NA
+    boot_reps <- NULL
   }
   
-  # calculate CIs and p-values
-  ci <- purrr::map_dfr(1:6, ~{
-    transformation <- 'identity'
-    if (.x==5) transformation <- 'logit'
-    if (.x==6) transformation <- 'inverse'
-    
-    tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
-                 theta_null=0, ci_conf=conf,
-                 transformation=transformation)))
-  
-  })
-  s$`bootstrap CI 2.5%` <- signif(as.numeric(ci$V1), 5)
-  s$`bootstrap CI 97.5%` <- signif(as.numeric(ci$V2), 5)
-
   return(
     panstripe:::new_panfit(
       summary = s,
@@ -160,20 +179,23 @@ fit_tweedie <- function(model, data){
   return(tm)
 }
 
-fit_model <- function(data, indices=1:nrow(data), tree=NULL, model, family, boot_type){
-  stopifnot(length(indices)==nrow(data))
+fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, family, boot_type){
+  stopifnot(length(indices)==nrow(d))
   stopifnot(boot_type %in% c('branch', 'gene'))
-  
+
   if (boot_type == 'branch') {
-    tdat <- data[indices,]
+    tdat <- d[indices,]
   } else {
     tdat <- tibble::tibble(
-      acc=colSums(data[indices,tree$edge[,2]]),
+      acc=colSums(d[indices,tree$edge[,2]]),
       core=tree$edge.length,
       istip=tree$edge[,2]<=length(tree$tip.label) 
     )
     # add depth
     tdat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,2]]
+    if (!is.null(min_depth)){
+      tdat <- tdat[tdat$min_depth>=min_depth,] 
+    }
   }
   
   if (is.character(family) && (family=="Tweedie")){
@@ -183,7 +205,7 @@ fit_model <- function(data, indices=1:nrow(data), tree=NULL, model, family, boot
     tm <- stats::glm(model, data = tdat, family=family)
     coef <- c(tm$coefficients, NA, NA)
   }
-  
+
   return(coef)
 }
 

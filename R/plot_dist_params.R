@@ -33,46 +33,64 @@ plot_dist_params <- function(fit, plot=TRUE, text_size=14, color_pallete=6){
   }
   
   
-  dist_dat <- purrr::imap_dfr(fit, ~{
+  dist_dat <- purrr::imap_dfr(fit, function(f, y) {
+
+    sims <- sim_glm(f$model, boot_samples=f$ci_samples)
+    sims_ci <- apply(sims, 2, function(x) quantile(x, c(0.025,0.5,0.975)))
     
-    p_ci <- boot_ci_pval(.x$ci_samples, 5, 'norm', transformation='logit')
-    phi_ci <- boot_ci_pval(.x$ci_samples, 6, 'norm', transformation='inverse')
+    p_ci <- quantile(f$ci_samples$t[,6], c(0.025,0.5,0.975))
+    phi_ci <- quantile(f$ci_samples$t[,7], c(0.025,0.5,0.975))
     
-    estimate <- convert_tweedie(xi = .x$model$p, 
-                    phi = .x$model$phi, 
-                    mu = c(0:max(.x$data$acc)))
-    lower <- convert_tweedie(xi = p_ci[[1]], 
-                             phi = phi_ci[[1]], 
-                             mu = c(0:max(.x$data$acc)))
-    upper <- convert_tweedie(xi = p_ci[[2]], 
-                             phi = phi_ci[[2]], 
-                             mu = c(0:max(.x$data$acc)))
+    sim_params <- purrr::map_dfr(1:nrow(sims), function(i){
+      conv <- convert_tweedie(xi = f$ci_samples$t[i,6], 
+                      phi = f$ci_samples$t[i,7], 
+                      mu = sims[i,])
+      tibble::tibble(
+        index=1:ncol(sims),
+        core=f$model$data$core,
+        poisson.lambda=conv$poisson.lambda,
+        gamma.mean=conv$gamma.mean,
+        gamma.phi=conv$gamma.phi
+      )
+    }) %>%
+      dplyr::group_by(index,core) %>%
+      dplyr::summarise(
+        parameter=c('Poisson mean','Gamma mean','Gamma dispersion'),
+        estimate=c(quantile(poisson.lambda, 0.5),quantile(gamma.mean, 0.5),quantile(gamma.phi, 0.5)),
+        lower=c(quantile(poisson.lambda, 0.025),quantile(gamma.mean, 0.025),quantile(gamma.phi, 0.025)),
+        upper=c(quantile(poisson.lambda, 0.975),quantile(gamma.mean, 0.975),quantile(gamma.phi, 0.975))
+      ) %>% 
+      tibble::add_column(pangenome=y, .before=1)
+    
+  return(sim_params)
+    
+  }) %>% dplyr::arrange(parameter, core)
+  
+  dist_dat <- purrr::map_dfr(split(dist_dat, paste(dist_dat$pangenome, dist_dat$parameter)), ~{
+    .x <- .x[!duplicated(cut(.x$core, breaks = 1000)),]
+    pacc <- stats::smooth.spline(x = .x$core, y = .x$estimate, cv=TRUE, all.knots=TRUE)
     
     tibble::tibble(
-      pangenome=.y,
-      parameter=gsub('[0-9]+','',names(unlist(estimate))),
-      tweedie_mean=rep(c(0:max(.x$data$acc)), 3),
-      estimate=unlist(estimate),
-      lower=unlist(lower),
-      upper=unlist(upper),
+      pangenome=unique(.x$pangenome),
+      parameter=unique(.x$parameter),
+      core=pacc$x,
+      estimate=pmax(0, pacc$y),
+      lower=pmax(0, stats::smooth.spline(x = .x$core, y = .x$lower, all.knots=TRUE, cv = TRUE)$y),
+      upper=pmax(0, stats::smooth.spline(x = .x$core, y = .x$upper, all.knots=TRUE, cv = TRUE)$y)
     )
-    
   })
-  
-  new_names <- c(poisson.lambda='Poisson mean',gamma.mean='Gamma mean',gamma.phi='Gamma dispersion')
-  dist_dat$parameter <- factor(new_names[dist_dat$parameter], levels=new_names)
-  
+
   if (!plot){
     return(dist_dat)
   }
   
   if (length(fit)>1) {
-    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$tweedie_mean, y=.data$estimate, col=.data$pangenome)) +
+    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$core, y=.data$estimate, col=.data$pangenome)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3) +
       ggplot2::facet_wrap(~parameter, nrow = 1, scales = 'free_y')
   } else {
-    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$tweedie_mean, y=.data$estimate)) +
+    gg <- ggplot2::ggplot(dist_dat, ggplot2::aes(x=.data$core, y=.data$estimate)) +
       ggplot2::geom_line() +
       ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper), alpha=0.3) +
       ggplot2::facet_wrap(~parameter, nrow = 1, scales = 'free_y')

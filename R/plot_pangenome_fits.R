@@ -5,7 +5,7 @@
 #' @description Plots the fitted pangenome tweedie regression model.
 #'
 #' @param fit the result of running the `panstripe` function. Multiple fits can be passed as a named list.
-#' @param type either 'cumulative' (default) or 'individual'. Indicates whether or not to plot the cumulative sum of core and accessory branch lengths.
+#' @param type either 'cumulative' or 'individual' (default). Indicates whether or not to plot the cumulative sum of core and accessory branch lengths.
 #' @param ci whether or not to include the confidence interval ribbon (default=TRUE)
 #' @param plot whether to generate the plot (default) or return a data.frame
 #' @param legend toggles the display of the legend on and off
@@ -19,15 +19,16 @@
 #' sim <- simulate_pan(rate=0)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 #' plot_pangenome_fits(fA, color_pallete=6, type='individual')
-#' plot_pangenome_fits(fA, color_pallete=6)
+#' plot_pangenome_fits(fA, color_pallete=6, type='cumulative')
 #' sim <- simulate_pan(rate=1e-2)
-#' fB <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+#' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+#' plot_pangenome_fits(fB, color_pallete=6)
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='cumulative')
 #'
 #' @export
 plot_pangenome_fits <- function(fit,
-                                type='cumulative',
+                                type='individual',
                                 ci=TRUE,
                                 plot=TRUE, 
                                 legend=TRUE,
@@ -49,6 +50,7 @@ plot_pangenome_fits <- function(fit,
   nsim <- 1000
   if (type=='cumulative') {
     
+    
     fit_dat <- purrr::imap_dfr(fit, ~{
       
       # ilink <- family(.x$model)$linkinv
@@ -60,17 +62,15 @@ plot_pangenome_fits <- function(fit,
       #   lower=node_depth_edge_weight(.x$tree, ilink(p$fit - 2*p$se.fit)),
       #   upper=node_depth_edge_weight(.x$tree, ilink(p$fit + 2*p$se.fit))
       # )
+      if((.x$tree$Nnode*2+1)!=(nrow(.x$model$data)+1)) stop("Number of edges does not match tree! type='cumulative' does not currently support filtered edges.")
       
       d <- .x$model$data
       d$istip <- FALSE
-      p <- predict(.x$model, newdata = d, type = 'response')
-      df <- purrr::map_dfr(1:nsim, function(i){
-        sim <- tweedie::rtweedie(length(.x$model$fitted.values),
-                          mu=p,
-                          phi = .x$model$phi,
-                          power = .x$model$p)
+      sims <- sim_glm(.x$model, newdat = d, boot_samples = .x$ci_samples)
+      df <- purrr::map_dfr(seq(1,.x$ci_samples$R), function(i){
+        sim <- c(sims[i,])
         tibble::tibble(
-          edge_index=1:(2*.x$tree$Nnode+1),
+          edge_index=1:(nrow(.x$tree$edge)+1),
           core=ape::node.depth.edgelength(.x$tree),
           simacc=node_depth_edge_weight(.x$tree, sim)
         )
@@ -82,13 +82,17 @@ plot_pangenome_fits <- function(fit,
           lower=quantile(simacc, 0.025),
           upper=quantile(simacc, 0.975)
         ) %>%
-        tibble::add_column(pangenome=.y, .before=1) %>%
         dplyr::arrange(core)
-      
-      df$edge_index <- NULL
-      df$acc <- pmax(0, stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)$y)
-      df$lower <- pmax(0, stats::smooth.spline(x = df$core, y = df$lower, cv=TRUE, all.knots=TRUE)$y)
-      df$upper <- pmax(0, stats::smooth.spline(x = df$core, y = df$upper, cv=TRUE, all.knots=TRUE)$y)
+
+      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
+      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
+      df <- tibble::tibble(
+        pangenome=.y,
+        core=pacc$x,
+        acc=pmax(0, pacc$y),
+        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
+        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
+      )
       
       return(df)
     })
@@ -101,7 +105,7 @@ plot_pangenome_fits <- function(fit,
         pangenome=.y,
         acc = ape::node.depth.edgelength(temp_tree),
         core = ape::node.depth.edgelength(.x$tree),
-        istip = rep(c(TRUE, FALSE), c(.x$tree$Nnode+1, .x$tree$Nnode))
+        istip = rep(c(TRUE, FALSE), c(length(.x$tree$tip.label), nrow(.x$tree$edge)+1-length(.x$tree$tip.label)))
       )
     })
   } else {
@@ -110,12 +114,10 @@ plot_pangenome_fits <- function(fit,
       
       d <- .x$model$data
       d$istip <- FALSE
-      p <- predict(.x$model, newdata = d, type = 'response')
-      df <- purrr::map_dfr(1:nsim, function(i){
-        sim <- tweedie::rtweedie(length(.x$model$fitted.values), 
-                                 mu=p, 
-                                 phi = .x$model$phi, 
-                                 power = .x$model$p)
+      sims <- sim_glm(.x$model, newdat = d, boot_samples = .x$ci_samples)
+      df <- purrr::map_dfr(seq(1,.x$ci_samples$R), function(i){
+          sim <- c(sims[i,])
+        
         tibble::tibble(
           edge_index=1:length(sim),
           core=.x$model$data$core,
@@ -125,17 +127,21 @@ plot_pangenome_fits <- function(fit,
         dplyr::group_by(edge_index) %>%
         dplyr::summarise(
           core=unique(core),
-          acc=quantile(simacc, 0.5),
+          acc=quantile(simacc,0.5),
           lower=quantile(simacc, 0.025),
           upper=quantile(simacc, 0.975)
         ) %>% 
-        tibble::add_column(pangenome=.y, .before=1) %>% 
         dplyr::arrange(core)
       
-      df$edge_index <- NULL
-      df$acc <- pmax(0, stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)$y)
-      df$lower <- pmax(0, stats::smooth.spline(x = df$core, y = df$lower, cv=TRUE, all.knots=TRUE)$y)
-      df$upper <- pmax(0, stats::smooth.spline(x = df$core, y = df$upper, cv=TRUE, all.knots=TRUE)$y)
+      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
+      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
+      df <- tibble::tibble(
+        pangenome=.y,
+        core=pacc$x,
+        acc=pmax(0, pacc$y),
+        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
+        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
+      )
       
       return(df)
       
@@ -159,9 +165,15 @@ plot_pangenome_fits <- function(fit,
         upper=ci[2,]) %>% 
         dplyr::arrange(core)
       
-      df$acc <- pmax(0, stats::smooth.spline(x = df$core, y = df$acc)$y)
-      df$lower <- pmax(0, stats::smooth.spline(x = df$core, y = df$lower)$y)
-      df$upper <- pmax(0, stats::smooth.spline(x = df$core, y = df$upper)$y)
+      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
+      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
+      df <- tibble::tibble(
+        pangenome=.y,
+        core=pacc$x,
+        acc=pmax(0, pacc$y),
+        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
+        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
+      )
       
       return(df)
     })
@@ -215,4 +227,28 @@ gg
 node_depth_edge_weight <- function(tree, edge_weight){
   tree$edge.length <- edge_weight
   ape::node.depth.edgelength(tree)
+}
+
+sim_glm <- function(obj, newdat=NULL, boot_samples){
+  
+  obj_coef <- stats::coef(obj)
+  obj_vcov <- stats::vcov(obj)
+  
+  if (is.null(newdat)){
+    newdat <- obj$model$data
+  }
+  
+  ilink <- obj$family$linkinv 
+  
+  # drawn <- matrix(MASS::mvrnorm(n = nsim, mu = obj_coef, Sigma = obj_vcov), 
+  #                 ncol=length(obj_coef), 
+  #                 byrow = FALSE)
+
+  p <- t(apply(boot_samples$t, 1, function(r){
+    temp_model <- obj
+    temp_model$coefficients <- unlist(r[1:length(obj$coefficients)])
+    predict(temp_model, newdata = newdat, type='response')
+  }))
+
+  return(p)
 }

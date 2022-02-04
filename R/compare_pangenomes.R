@@ -22,6 +22,7 @@
 #' fitB <- panstripe(simB$pa, simB$tree, nboot=10, ci_type='perc')
 #' fitB$summary
 #' comp <- compare_pangenomes(fitA, fitB, ci_type='perc')
+#' comp$summary
 #'
 #' @export
 compare_pangenomes <- function(fitA, fitB, family="Tweedie", ci_type='bca', conf=0.95, nboot=100){
@@ -45,8 +46,14 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", ci_type='bca', conf
   }
   
   # fit model
-  model <- stats::as.formula("acc ~ istip + core + depth + depth:pangenome + istip:pangenome + core:pangenome")
-  m <- fit_tweedie(model, dat)
+  model <- stats::as.formula("acc ~ istip + core + depth + istip:core + depth:pangenome + istip:pangenome + core:pangenome")
+  
+  if (family=='Tweedie'){
+    m <- fit_tweedie(model, dat)  
+  } else{
+    m <- stats::glm(model, dat, family = family)
+  }
+  
   
   s <- summary(m)$coefficients %>% 
     tibble::as_tibble(rownames = 'term')
@@ -55,21 +62,27 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", ci_type='bca', conf
   colnames(s) <- c('term','estimate','std.error','statistic','p.value')
   
   # run bootstrap
-  boot_reps <- boot::boot(dat, fit_model,
-                          R = nboot,
-                          stype='i',
-                          tree=tree, model=model, family=family, boot_type='branch')
-  
-  ci <- purrr::map_dfr(which(grepl('.*pangenome.*', names(m$coefficients))), ~{
-    df <- tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
-                                     theta_null=0, ci_conf=conf,
-                                     transformation='identity')))
-    df$term <- gsub("[T:].*", "", names(m$coefficients)[[.x]])
-    return(df)
-  })
-  
-  s$`bootstrap CI 2.5%` <- signif(as.numeric(ci$V1[match(s$term, ci$term)]), 5)
-  s$`bootstrap CI 97.5%` <- signif(as.numeric(ci$V2[match(s$term, ci$term)]), 5)
+  if (nboot>1){
+    boot_reps <- boot::boot(dat, fit_model,
+                            R = nboot,
+                            stype='i',
+                            tree=tree, model=model, family=family, boot_type='branch')
+    
+    ci <- purrr::map_dfr(which(grepl('.*pangenome.*', names(m$coefficients))), ~{
+      df <- tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
+                                             theta_null=0, ci_conf=conf,
+                                             transformation='identity')))
+      df$term <- gsub("[T:].*", "", names(m$coefficients)[[.x]])
+      return(df)
+    })
+    
+    s$`bootstrap CI 2.5%` <- signif(as.numeric(ci$V1[match(s$term, ci$term)]), 5)
+    s$`bootstrap CI 97.5%` <- signif(as.numeric(ci$V2[match(s$term, ci$term)]), 5)
+  } else {
+    boot_reps <- NULL
+    s$`bootstrap CI 2.5%` <- NA
+    s$`bootstrap CI 97.5%` <- NA
+  }
   
   return(list(
     summary=s,
