@@ -11,6 +11,10 @@
 #' @param legend toggles the display of the legend on and off
 #' @param text_size the base text size of the plot (default=14)
 #' @param color_pallete the pallete number passed to `scale_fill_brewer`
+#' @param include_data whether or not to include raw data points in plot (default=FALSE)
+#' @param trim whether or not to trim the plots to cover the same range for each pangenome (default=TRUE)
+#' @param facet whether or not to generate separate plots for each pangenome (default=FALSE).
+#' 
 #'
 #' @return either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 #'
@@ -18,14 +22,15 @@
 #'
 #' sim <- simulate_pan(rate=0)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-#' plot_pangenome_fits(fA, color_pallete=6, type='individual')
-#' plot_pangenome_fits(fA, color_pallete=6, type='cumulative')
+#' plot_pangenome_fits(fA, color_pallete=6, type='individual', include_data=TRUE)
+#' plot_pangenome_fits(fA, color_pallete=6, type='cumulative', include_data=TRUE)
 #' sim <- simulate_pan(rate=1e-2)
 #' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-#' plot_pangenome_fits(fB, color_pallete=6)
+#' plot_pangenome_fits(fB, color_pallete=6, include_data=TRUE, type='cumulative')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
-#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='cumulative')
-#'
+#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='cumulative', include_data=TRUE)
+#' 
+fit <- readRDS("~/Downloads/fits.RDS")
 #' @export
 plot_pangenome_fits <- function(fit,
                                 type='individual',
@@ -33,187 +38,123 @@ plot_pangenome_fits <- function(fit,
                                 plot=TRUE, 
                                 legend=TRUE,
                                 text_size=14,
-                                color_pallete=6){
+                                color_pallete=6,
+                                include_data=FALSE,
+                                trim=TRUE,
+                                facet=FALSE){
   # check inputs
   if (class(fit)!='panfit'){
     purrr::map(fit, ~{
       if (class(.x) != 'panfit') stop('fit is not of class `panfit`!')
-      panstripe:::validate_panfit(.x)
+      validate_panfit(.x)
     })
   } else {
-    panstripe:::validate_panfit(fit)
+    validate_panfit(fit)
     fit <- list(fit)
   }
   
   if (!type %in% c('cumulative','individual')) stop("type must be one of either 'cumulative' or 'individual'!")
   
-  nsim <- 1000
-  if (type=='cumulative') {
+  plot_data <- purrr::imap(fit, ~{
     
-    
-    fit_dat <- purrr::imap_dfr(fit, ~{
-      
-      # ilink <- family(.x$model)$linkinv
-      # p <- predict(.x$model, type = 'link', se.fit = TRUE)
-      # df <- tibble::tibble(
-      #   pangenome=.y,
-      #   core=ape::node.depth.edgelength(.x$tree),
-      #   acc=node_depth_edge_weight(.x$tree, ilink(p$fit)),
-      #   lower=node_depth_edge_weight(.x$tree, ilink(p$fit - 2*p$se.fit)),
-      #   upper=node_depth_edge_weight(.x$tree, ilink(p$fit + 2*p$se.fit))
-      # )
-      if((.x$tree$Nnode*2+1)!=(nrow(.x$model$data)+1)) stop("Number of edges does not match tree! type='cumulative' does not currently support filtered edges.")
-      
-      d <- .x$model$data
-      d$istip <- FALSE
-      sims <- sim_glm(.x$model, newdat = d, boot_samples = .x$ci_samples)
-      df <- purrr::map_dfr(seq(1,.x$ci_samples$R), function(i){
-        sim <- c(sims[i,])
-        tibble::tibble(
-          edge_index=1:(nrow(.x$tree$edge)+1),
-          core=ape::node.depth.edgelength(.x$tree),
-          simacc=node_depth_edge_weight(.x$tree, sim)
-        )
-      }) %>%
-        dplyr::group_by(edge_index) %>%
-        dplyr::summarise(
-          core=unique(core),
-          acc=quantile(simacc, 0.5),
-          lower=quantile(simacc, 0.025),
-          upper=quantile(simacc, 0.975)
-        ) %>%
-        dplyr::arrange(core)
-
-      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
-      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
-      df <- tibble::tibble(
-        pangenome=.y,
-        core=pacc$x,
-        acc=pmax(0, pacc$y),
-        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
-        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
-      )
-      
-      return(df)
-    })
-      
-    point_dat <- purrr::imap_dfr(fit, ~{
+    if (type=='cumulative'){
       temp_tree <- .x$tree
       temp_tree$edge.length <- .x$data$acc
       
-      tibble::tibble(
+      # point_data <- tibble::tibble(
+      #   pangenome=.y,
+      #   acc = unlist(purrr::map(ape::subtrees(temp_tree), function(st) sum(st$edge.length)/length(st$tip.label))),
+      #   core = unlist(purrr::map(ape::subtrees(.x$tree), function(st) sum(st$edge.length)/length(st$tip.label))),
+      #   istip = FALSE
+      # )
+      
+      point_data <- tibble::tibble(
         pangenome=.y,
-        acc = ape::node.depth.edgelength(temp_tree),
-        core = ape::node.depth.edgelength(.x$tree),
-        istip = rep(c(TRUE, FALSE), c(length(.x$tree$tip.label), nrow(.x$tree$edge)+1-length(.x$tree$tip.label)))
-      )
-    })
+        acc = purrr::map_dbl(ape::subtrees(temp_tree), function(st) mean(ape::node.depth.edgelength(st)[1:length(st$tip.label)])),
+        core = purrr::map_dbl(ape::subtrees(.x$tree), function(st) mean(ape::node.depth.edgelength(st)[1:length(st$tip.label)])),
+        istip = FALSE
+      ) %>% dplyr::filter(core<=max(.x$data$core))
+      
+      # acc_d <- ape::cophenetic.phylo(temp_tree)
+      # point_data <- tibble::tibble(
+      #   pangenome=.y,
+      #   acc = acc_d[upper.tri(acc_d)],
+      #   core = ape::cophenetic.phylo(.x$tree)[upper.tri(acc_d)],
+      #   istip = FALSE
+      # )
+    } else{
+      point_data <- .x$data %>% 
+        tibble::add_column(pangenome=.y, .before = 1) #%>% dplyr::filter(istip)
+    }
+    
+    ilink <- family(.x$model)$linkinv
+    
+    p <- predict(.x$model, type = 'link', se.fit = TRUE, 
+                 newdata=data.frame(
+                   core = seq(0,max(point_data$core), length.out=100),
+                   istip = TRUE,
+                   depth = max(.x$model$data$depth)-seq(0,max(point_data$core), length.out=100)
+                 ))
+    
+    fit_data <- tibble::tibble(
+      pangenome=.y,
+      core = seq(0,max(point_data$core), length.out=100),
+      acc = ilink(p$fit),
+      lower = ilink(p$fit - 2*p$se.fit),
+      upper = ilink(p$fit + 2*p$se.fit),
+    )
+    
+    return(list(point_data=point_data, fit_data=fit_data))
+  })
+  
+  if (trim){
+    max_core <- min(purrr::map_dbl(fit, ~ max(.x$model$data$core)))
   } else {
-    
-    fit_dat <- purrr::imap_dfr(fit, ~{
-      
-      d <- .x$model$data
-      d$istip <- FALSE
-      sims <- sim_glm(.x$model, newdat = d, boot_samples = .x$ci_samples)
-      df <- purrr::map_dfr(seq(1,.x$ci_samples$R), function(i){
-          sim <- c(sims[i,])
-        
-        tibble::tibble(
-          edge_index=1:length(sim),
-          core=.x$model$data$core,
-          simacc=sim
-        )
-      }) %>% 
-        dplyr::group_by(edge_index) %>%
-        dplyr::summarise(
-          core=unique(core),
-          acc=quantile(simacc,0.5),
-          lower=quantile(simacc, 0.025),
-          upper=quantile(simacc, 0.975)
-        ) %>% 
-        dplyr::arrange(core)
-      
-      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
-      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
-      df <- tibble::tibble(
-        pangenome=.y,
-        core=pacc$x,
-        acc=pmax(0, pacc$y),
-        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
-        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
-      )
-      
-      return(df)
-      
-      
-      
-      sims <- do.call(rbind, purrr::map(1:nsim, function(i){
-        tweedie::rtweedie(length(.x$model$fitted.values), 
-                          mu=.x$model$fitted.values, 
-                          phi = .x$model$phi, 
-                          power = .x$model$p)
-      }))
-      
-      ci <- apply(sims, 2, function(sim) quantile(sim, c(0.025, 0.975)))
-      temp_tree <- .x$tree
-      
-      df <- tibble::tibble(
-        pangenome=.y,
-        core=.x$model$data$core,
-        acc=colMeans(sims),
-        lower=ci[1,],
-        upper=ci[2,]) %>% 
-        dplyr::arrange(core)
-      
-      df <- df[!duplicated(cut(df$core, breaks = 1000)),]
-      pacc <- stats::smooth.spline(x = df$core, y = df$acc, cv=TRUE, all.knots=TRUE)
-      df <- tibble::tibble(
-        pangenome=.y,
-        core=pacc$x,
-        acc=pmax(0, pacc$y),
-        lower=pmax(0, stats::smooth.spline(x = df$core, y = df$lower, all.knots=TRUE, cv = TRUE)$y),
-        upper=pmax(0, stats::smooth.spline(x = df$core, y = df$upper, all.knots=TRUE, cv = TRUE)$y)
-      )
-      
-      return(df)
-    })
-    
-    point_dat <- purrr::imap_dfr(fit, ~{
-      .x$data %>% 
-        tibble::add_column(pangenome=.y, .before = 1)
-    })
-    
+    max_core <- Inf
   }
   
+  plot_data <- list(
+    point_data=purrr::map_dfr(plot_data, ~ .x$point_data) %>%
+      dplyr::filter(core<max_core),
+    fit_data=purrr::map_dfr(plot_data, ~ .x$fit_data)%>%
+      dplyr::filter(core<max_core)
+  )
+  
   if (!plot){
-    return(list(
-      fit_dat=fit_dat,
-      point_dat=point_dat
-    ))
+    return(plot_data)
   }
   
   if (length(fit)>1) {
-    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=.data$core, y=.data$acc, colour=.data$pangenome)) +
-      ggplot2::geom_line() +
-      ggplot2::geom_point(data = point_dat, ggplot2::aes(y=.data$acc, colour=.data$pangenome, shape=istip))
-    if (ci){
+    gg <- ggplot2::ggplot(plot_data$fit_data, ggplot2::aes(x=.data$core, y=.data$acc, colour=.data$pangenome))
+    if (include_data) {
+      gg <- gg + ggplot2::geom_point(data = plot_data$point_data, ggplot2::aes(y=.data$acc, colour=.data$pangenome), alpha=1)
+    }
+    gg <- gg + ggplot2::geom_line() 
+    if (ci && !any(is.na(plot_data$fit_data$upper))){
       gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3)
     }
+    if (facet){
+      gg <- gg + facet_wrap(~pangenome, ncol = 1)
+    }
   } else {
-    gg <- ggplot2::ggplot(fit_dat, ggplot2::aes(x=.data$core, y=.data$acc)) +
-      ggplot2::geom_line() +
-      ggplot2::geom_point(data = point_dat, ggplot2::aes(y=.data$acc, shape=istip))
-    if (ci){
+    gg <- ggplot2::ggplot(plot_data$fit_data, ggplot2::aes(x=.data$core, y=.data$acc))
+    if (include_data) {
+      gg <- gg + ggplot2::geom_point(data = plot_data$point_data, ggplot2::aes(y=.data$acc))
+    }
+    gg <- gg + ggplot2::geom_line()
+    if (ci && !any(is.na(plot_data$fit_data$upper))){
       gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper), alpha=0.3)
     }
   }
+  
   
   gg <- gg + 
     ggplot2::scale_colour_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::theme_bw(base_size = text_size) +
-    ggplot2::xlab('core phylogentic branch distance')
-gg
+    ggplot2::xlab('core phylogentic branch distance') #+
+  
+  gg
   if (type=='cumulative'){
     gg + ggplot2::ylab('cumulative accessory distance')
   } else {
@@ -224,31 +165,26 @@ gg
   
 }
 
-node_depth_edge_weight <- function(tree, edge_weight){
-  tree$edge.length <- edge_weight
-  ape::node.depth.edgelength(tree)
-}
+# node_depth_edge_weight <- function(tree, edge_weight){
+#   tree$edge.length <- edge_weight
+#   ape::node.depth.edgelength(tree)
+# }
 
-sim_glm <- function(obj, newdat=NULL, boot_samples){
-  
-  obj_coef <- stats::coef(obj)
-  obj_vcov <- stats::vcov(obj)
-  
-  if (is.null(newdat)){
-    newdat <- obj$model$data
-  }
-  
-  ilink <- obj$family$linkinv 
-  
-  # drawn <- matrix(MASS::mvrnorm(n = nsim, mu = obj_coef, Sigma = obj_vcov), 
-  #                 ncol=length(obj_coef), 
-  #                 byrow = FALSE)
-
-  p <- t(apply(boot_samples$t, 1, function(r){
-    temp_model <- obj
-    temp_model$coefficients <- unlist(r[1:length(obj$coefficients)])
-    predict(temp_model, newdata = newdat, type='response')
-  }))
-
-  return(p)
-}
+# node_path_length <- function(tree){
+#   all = c()
+#   edges <- purrr::map_chr(1:nrow(tree$edge), function(i) paste(sort(c(tree$edge[i,1], tree$edge[i,2])), collapse = ' '))
+#   edge_lengths <- tree$edge.length
+#   
+#   for (tip in 1:length(tree$tip.label)) {
+#     p <- ape::nodepath(tree, from = tip, to = length(tree$tip.label)+1)
+#     csm <- c()
+#     for (i in 2:length(p)){
+#       index <- which(edges==paste(sort(c(p[[i-1]], p[[i]])), collapse = ' '))
+#       csm <- c(csm, tree$edge.length[index])
+#       # edges <- edges[-index]
+#       # edge_lengths <- edge_lengths[-index]
+#     }
+#     all <- c(all, cumsum(csm))
+#   }
+#   return(all)
+# }

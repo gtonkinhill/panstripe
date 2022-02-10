@@ -16,14 +16,15 @@
 #' simA <- simulate_pan(rate=1e-4, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
 #' simB <- simulate_pan(rate=1e-3, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
 #' simC <- simulate_pan(rate=1e-2, ngenomes = 200, fn_error_rate=1, fp_error_rate=1)
-#' fits <- purrr::map(list(A=simA, B=simB, C=simC), ~{
+#' tfits <- purrr::map(list(A=simA, B=simB, C=simC), ~{
 #'   panstripe(.x$pa, .x$tree, nboot=10, ci_type='perc')
 #' })
 #' 
 #' covariates <- tibble::tibble(
-#'   pangenome=c('A','B','C'),
-#'   dummy=c(1,2,3)
+#'   pangenome=c('A','B','C','E','F','G'),
+#'   dummy=c(1,2,3,1,2,2)
 #' )
+#' fits <- c(tfits, list(E=tfits[[1]], F=tfits[[2]], G=tfits[[3]]))
 #' comp <- compare_pangenome_covariates(fits, covariates)
 #' comp$summary
 #'
@@ -33,7 +34,7 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   # input checks
   if (class(fits) != 'list') stop('fits must be a list of panfit objects!')
   if (any(purrr::map_lgl(fits, ~ class(.x) != 'panfit'))) stop('fits must be a list of panfit objects!')
-  purrr::walk(fits, ~ panstripe:::validate_panfit(.x))
+  purrr::walk(fits, ~ validate_panfit(.x))
   
   if ((nrow(covariates)!=length(fits)) | (!all(unlist(covariates[,1]) %in% names(fits)))) stop(
     'first column of covariates data.frame must match fits list names!')
@@ -43,7 +44,7 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   } else {
     if (!all(keep %in% colnames(covariates))) stop('keep must be a subset of the column names in the covariates data.frame!')
   }
-
+  
   #combine data
   dat <- purrr::imap_dfr(fits, ~{
     tibble::add_column(.x$data, pangenome=.y, .before=1)
@@ -51,19 +52,22 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   
   covariates <- covariates[match(dat$pangenome, unlist(covariates[,1])),]
   dat <- cbind(dat, covariates[,2:ncol(covariates),drop=FALSE])
-
+  
   # fit model
   model <- stats::as.formula(paste(c("acc ~ istip + core + depth + istip:core",
                                      paste('depth', keep, sep=':'),
                                      paste('istip', keep, sep=':'),
                                      paste('core', keep, sep=':')), collapse = ' + '))
   
+  dmodel <- stats::as.formula(paste(c("acc ~ 1" , keep), collapse = ' + '))
+  
   if (family=="Tweedie"){
-    m <- fit_tweedie(model, dat)  
+    m <- fit_double_tweedie(model = model, data = dat, dmodel = dmodel)
+    a <- anova.dglm.basic(m, tweedie.power = m$p)
   } else {
     m <- stats::glm(model, dat, family = family)
   }
-
+  
   s <- summary(m)$coefficients %>% 
     tibble::as_tibble(rownames = 'term')
   coef <- s$term
@@ -72,24 +76,45 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   indices <- which(coef %in% s$term)
   s$term <- gsub("TRUE", "", s$term)
   colnames(s) <- c('term','estimate','std.error','statistic','p.value')
- 
+  
+  if (family=='Tweedie'){
+    s <- s %>% tibble::add_row(
+      term=paste('dispersion model:', keep),
+      estimate=NA,
+      std.error=NA,
+      statistic=a$Chisq,
+      p.value=a$p.value)
+  }
+  
   # run bootstrap
-  boot_reps <- boot::boot(dat, fit_model, 
-                          R = nboot,
-                          stype='i',
-                          tree=tree, model=model, family=family, boot_type='branch')
+  if (nboot>1){
+    if (family=='Tweedie'){
+      boot_reps <- boot::boot(dat, fit_double_model,
+                              R = nboot,
+                              stype='i',
+                              model=model, dmodel=dmodel)
+    } else {
+      boot_reps <- boot::boot(dat, fit_model,
+                              R = nboot,
+                              stype='i',
+                              model=model, family=family, boot_type='branch')
+    }
+    
+    ci <- purrr::map_dfr(indices, ~{
+      df <- tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
+                                             theta_null=0, ci_conf=conf,
+                                             transformation='identity')))
+      df$term <- gsub("TRUE", "", names(m$coefficients)[[.x]])
+      return(df)
+    })
+    
+    s$`bootstrap CI 2.5%` <- signif(ci$V1, 5)[match(s$term, ci$term)]
+    s$`bootstrap CI 97.5%` <- signif(ci$V2, 5)[match(s$term, ci$term)]
+  } else {
+    s$`bootstrap CI 2.5%` <- NA
+    s$`bootstrap CI 97.5%` <- NA
+  }
   
-  ci <- purrr::map_dfr(indices, ~{
-    df <- tibble::as_tibble(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
-                                           theta_null=0, ci_conf=conf,
-                                           transformation='identity')))
-    df$term <- gsub("TRUE", "", names(m$coefficients)[[.x]])
-    return(df)
-  })
-  
-  s$`bootstrap CI 2.5%` <- signif(ci$V1, 5)
-  s$`bootstrap CI 97.5%` <- signif(ci$V2, 5)
-
   return(list(
     summary=s,
     model=m

@@ -13,6 +13,7 @@
 #' @param stochastic.mapping use stochastic mapping in place of maximum parsimony for ancestral state reconstruction (experimental)
 #' @param ci_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.
 #' @param conf A scalar indicating the confidence level of the required intervals (default=0.95).
+#' @param boot_pvalue whether or not to calculate bootstrap p-values (default=FALSE)
 #'
 #' @return a panfit object with the resulting parameter estimates and bootstrap replicates
 #'
@@ -26,14 +27,18 @@
 #' ci_type='perc'
 #' boot_type='branch'
 #' conf=0.95
-#' res <- panstripe(sim$pa, sim$tree, ci_type='norm', boot_type='branch', nboot=100)
+#' res <- panstripe(sim$pa, sim$tree, ci_type='norm', boot_type='branch', nboot=100, boot_pvalue=TRUE)
 #' res$summary
 #'
 #' @export
 panstripe <- function(pa, tree, nboot=1000,
                       quiet=FALSE, stochastic.mapping=FALSE, 
                       min_depth=NULL,
-                      family='Tweedie', ci_type='bca', boot_type='branch', conf=0.95){
+                      family='Tweedie', 
+                      ci_type='norm', 
+                      boot_type='branch', 
+                      conf=0.95,
+                      boot_pvalue=FALSE){
   
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
@@ -134,18 +139,26 @@ panstripe <- function(pa, tree, nboot=1000,
       if (s$term[[.x]]=='phi') transformation <- 'inverse'
       
       boot_ci_pval(boot_reps, index=.x, type=ci_type,
-                                       theta_null=0, ci_conf=conf,
-                                       transformation=transformation)
+                   theta_null=0, ci_conf=conf,
+                   transformation=transformation,
+                   calc_pval = boot_pvalue)
       
     }))
     
     if (is.character(family) && (family=="Tweedie")){
       s$`bootstrap CI 2.5%` <- signif(as.numeric(ci[,1]), 5)
       s$`bootstrap CI 97.5%` <- signif(as.numeric(ci[,2]), 5)
+      if (boot_pvalue){
+        s$`bootstrap p-value` <- c(signif(as.numeric(ci[,3]), 5))
+      }
     } else {
       s$`bootstrap CI 2.5%` <- c(signif(as.numeric(ci[,1]), 5), NA, NA)
       s$`bootstrap CI 97.5%` <- c(signif(as.numeric(ci[,2]), 5), NA, NA)
+      if (boot_pvalue){
+        s$`bootstrap p-value` <- c(signif(as.numeric(ci[,3]), 5), NA, NA)
+      }
     }
+    
   } else {
     s$`bootstrap CI 2.5%` <- NA
     s$`bootstrap CI 97.5%` <- NA
@@ -265,7 +278,7 @@ boot_ci_pval <- function(boot_res, index, type,
                    bca = ci$bca[, 4:5])
   
   if (calc_pval){
-    return(c(alpha, sort(bounds)))
+    return(c(sort(bounds), alpha))
   } else {
     return(sort(bounds))
   }

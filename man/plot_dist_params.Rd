@@ -4,7 +4,13 @@
 \alias{plot_dist_params}
 \title{plot_dist_params}
 \usage{
-plot_dist_params(fit, plot = TRUE, text_size = 14, color_pallete = 6)
+plot_dist_params(
+  fit,
+  plot = TRUE,
+  text_size = 14,
+  color_pallete = 6,
+  boot_ci = FALSE
+)
 }
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple results can be passed as a named list.}
@@ -14,6 +20,8 @@ plot_dist_params(fit, plot = TRUE, text_size = 14, color_pallete = 6)
 \item{text_size}{the base text size of the plot (default=14)}
 
 \item{color_pallete}{the pallete number passed to `scale_fill_brewer`}
+
+\item{boot_ci}{whether to use bootstrap CI or standard error}
 }
 \value{
 either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
@@ -23,9 +31,11 @@ Plots the fitted pangenome tweedie regression model.
 }
 \examples{
 
-sim <- simulate_pan(rate=1e-3)
-fit <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+sim <- simulate_pan(rate=1e-3, mean_trans_size = 1)
+fit <- panstripe(sim$pa, sim$tree, nboot=100, ci_type='perc')
 plot_dist_params(fit)
-plot_dist_params(list(a=fit,b=fit))
+simB <- simulate_pan(rate=1e-3, mean_trans_size = 10)
+fitB <- panstripe(simB$pa, simB$tree, nboot=100, ci_type='perc')
+plot_dist_params(list(a=fit,b=fitB))
 
 }

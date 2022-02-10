@@ -22,7 +22,8 @@ Imports:
     matrixStats,
     rlang,
     readr,
-    boot
+    boot,
+    dglm
 LinkingTo: Rcpp
 Suggests: 
     knitr,

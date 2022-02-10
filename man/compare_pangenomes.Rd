@@ -8,9 +8,10 @@ compare_pangenomes(
   fitA,
   fitB,
   family = "Tweedie",
-  ci_type = "bca",
+  ci_type = "norm",
   conf = 0.95,
-  nboot = 100
+  nboot = 100,
+  boot_pvalue = FALSE
 )
 }
 \arguments{
@@ -20,11 +21,13 @@ compare_pangenomes(
 
 \item{family}{the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')}
 
-\item{ci_type}{the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.}
+\item{ci_type}{the method used to calculate the bootstrap CI (default='norm'). See \link[boot]{boot.ci} for more details.}
 
 \item{conf}{A scalar indicating the confidence level of the required intervals (default=0.95)}
 
 \item{nboot}{the number of bootstrap replicates to perform (default=100)}
+
+\item{boot_pvalue}{whether or not to calculate bootstrap p-values (default=FALSE)}
 }
 \value{
 a list containing a summary of the comparison and the resulting `glm` model object
@@ -34,13 +37,14 @@ Compares pangenomes using anova
 }
 \examples{
 
-simA <- simulate_pan(rate=1e-2, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-simB <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1)
-fitA <- panstripe(simA$pa, simA$tree, nboot=10, ci_type='perc')
+simA <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1, mean_trans_size=3)
+simB <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1, mean_trans_size=6)
+fitA <- panstripe(simA$pa, simA$tree, nboot=100, ci_type='norm')
 fitA$summary
-fitB <- panstripe(simB$pa, simB$tree, nboot=10, ci_type='perc')
+fitB <- panstripe(simB$pa, simB$tree, nboot=100, ci_type='norm')
 fitB$summary
-comp <- compare_pangenomes(fitA, fitB, ci_type='perc')
+comp <- compare_pangenomes(fitA, fitB, ci_type='norm', boot_pvalue=TRUE)
 comp$summary
+plot_dist_params(list(L=fitA, S=fitB), boot_ci=TRUE)
 
 }
