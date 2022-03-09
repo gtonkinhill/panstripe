@@ -6,7 +6,7 @@
 #'
 #' @param pa a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.
 #' @param tree a core gene phylogeny of class \link{phylo}
-#' @param stochastic.mapping use stochastic mapping in place of maximum parsimony for ancestral state reconstruction (experimental)
+#' @param asr_method method used to perform ancestral state reconstruction. Can be either 'max_parsimony' (default) or 'ML' (experimental)
 #' @param min_depth the minimum depth of a branch to be included in the regression. All branches are included by default.
 #' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
 #' @param ci_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.
@@ -33,7 +33,7 @@
 #'
 #' @export
 panstripe <- function(pa, tree, 
-                      stochastic.mapping=FALSE, 
+                      asr_method="max_parsimony", 
                       min_depth=NULL,
                       family='Tweedie', 
                       ci_type='norm',
@@ -46,6 +46,7 @@ panstripe <- function(pa, tree,
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
   if(!all(rownames(pa) %in% tree$tip.label)) stop('taxa labels in p/a matrix and tree do not match!')
+  if(!asr_method %in% c('max_parsimony', 'ML')) stop("asr_method must be one of 'max_parsimony' or 'ML'")
   
   if (!(is.character(family) && (family=="Tweedie"))){
     if (is.character(family)) 
@@ -61,27 +62,25 @@ panstripe <- function(pa, tree,
   pa <- pa[match(tree$tip.label, rownames(pa)),,drop=FALSE]
   index <- which(apply(pa, 2, function(x) length(unique(x)))>1)
   
-  if (stochastic.mapping){
-    sf <- sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
-    lmt <- sf$mapped.edge.lmt
-    lmt[lmt<log(0.5)] <- -Inf
-    
-    dat <- data.frame(
-      acc=exp(matrixStats::rowLogSumExps(lmt)),
-      core=sf$edge.length,
-      istip=tree$edge[,2]<=length(tree$tip.label)
-    )
+  if (asr_method=='ML'){
+    # use maximum liklihood
+    anc_states <- do.call(cbind, purrr::map(index, ~{
+      a <- ape::ace(x = pa[,.x], phy = tree, type = 'discrete')
+      mx <- c(pa[,.x], apply(a$lik.anc, 1, which.max)-1)
+      return(1*(mx[tree$edge[,2]]!=mx[tree$edge[,1]]))
+    }))
   } else{
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
+      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change[tree$edge[,2]])
     }))
-    dat <- tibble::tibble(
-      acc=rowSums(anc_states)[tree$edge[,2]],
-      core=tree$edge.length,
-      istip=tree$edge[,2]<=length(tree$tip.label) 
-    )
   }
+  
+  dat <- tibble::tibble(
+    acc=rowSums(anc_states),
+    core=tree$edge.length,
+    istip=tree$edge[,2]<=length(tree$tip.label) 
+  )
   
   # add depth and filter if requested
   dat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,1]]
@@ -203,7 +202,7 @@ fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, fa
     tdat <- d[indices,]
   } else {
     tdat <- tibble::tibble(
-      acc=colSums(d[indices,tree$edge[,2]]),
+      acc=colSums(d[indices,]),
       core=tree$edge.length,
       istip=tree$edge[,2]<=length(tree$tip.label) 
     )

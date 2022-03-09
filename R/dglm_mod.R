@@ -1,5 +1,5 @@
-#' dglm_mod
-#' Function taken from the dglm package by Peter Dunn and Gordon Smyth. Adapted to be callable by other functions.
+# dglm_mod
+# Function taken from the dglm package by Peter Dunn and Gordon Smyth. Adapted to be callable by other functions.
 dglm_mod <- function (formula = NULL, dformula = ~1, family = stats::gaussian, 
                   dlink = "log", data = NULL, subset = NULL, weights = NULL, 
                   contrasts = NULL, method = "ml", mustart = NULL, betastart = NULL, 
