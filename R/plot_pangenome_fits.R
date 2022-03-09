@@ -26,11 +26,8 @@
 #' plot_pangenome_fits(fA, color_pallete=6, type='cumulative', include_data=TRUE)
 #' sim <- simulate_pan(rate=1e-2)
 #' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-#' plot_pangenome_fits(fB, color_pallete=6, include_data=TRUE, type='cumulative')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
-#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='cumulative', include_data=TRUE)
 #' 
-fit <- readRDS("~/Downloads/fits.RDS")
 #' @export
 plot_pangenome_fits <- function(fit,
                                 type='individual',
@@ -134,7 +131,7 @@ plot_pangenome_fits <- function(fit,
       gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin=.data$lower, ymax=.data$upper, fill=.data$pangenome), alpha=0.3)
     }
     if (facet){
-      gg <- gg + facet_wrap(~pangenome, ncol = 1)
+      gg <- gg + ggplot2::facet_wrap(~pangenome, ncol = 1)
     }
   } else {
     gg <- ggplot2::ggplot(plot_data$fit_data, ggplot2::aes(x=.data$core, y=.data$acc))

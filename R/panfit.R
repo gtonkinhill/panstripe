@@ -8,7 +8,7 @@
 #' @param summary data.frame or tibble
 #' @param model glm
 #' @param data data.frame or tibble
-#' @param bootrap_replicates data.frame or tibble
+#' @param boot_samples data.frame or tibble
 #' @param tree phylo
 #' @param pa matrix, data.frame or tibble
 #' @return A panfit object

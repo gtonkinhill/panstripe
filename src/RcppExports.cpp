@@ -32,39 +32,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dwelling_times
-NumericMatrix dwelling_times(List tree, List Q_eigen, NumericMatrix Q, List fl);
-RcppExport SEXP _panstripe_dwelling_times(SEXP treeSEXP, SEXP Q_eigenSEXP, SEXP QSEXP, SEXP flSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type tree(treeSEXP);
-    Rcpp::traits::input_parameter< List >::type Q_eigen(Q_eigenSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type Q(QSEXP);
-    Rcpp::traits::input_parameter< List >::type fl(flSEXP);
-    rcpp_result_gen = Rcpp::wrap(dwelling_times(tree, Q_eigen, Q, fl));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fractional_likelihoods
-List fractional_likelihoods(NumericMatrix edges, NumericMatrix states, NumericVector prior, List tp);
-RcppExport SEXP _panstripe_fractional_likelihoods(SEXP edgesSEXP, SEXP statesSEXP, SEXP priorSEXP, SEXP tpSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type edges(edgesSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type states(statesSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type prior(priorSEXP);
-    Rcpp::traits::input_parameter< List >::type tp(tpSEXP);
-    rcpp_result_gen = Rcpp::wrap(fractional_likelihoods(edges, states, prior, tp));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_panstripe_WMPR_ASR_CPP", (DL_FUNC) &_panstripe_WMPR_ASR_CPP, 12},
-    {"_panstripe_dwelling_times", (DL_FUNC) &_panstripe_dwelling_times, 4},
-    {"_panstripe_fractional_likelihoods", (DL_FUNC) &_panstripe_fractional_likelihoods, 4},
     {NULL, NULL, 0}
 };
 

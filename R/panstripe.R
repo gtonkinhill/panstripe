@@ -1,19 +1,20 @@
 #' panstripe
 #'
-#' @import cplm
 #'
 #' @description Fits a Tweedie distribution to the inferred gene gain and loss events along each branch of a given phylogeny. 
 #' Includes covariates to control for the impact of annotation errors and the depth of ancestral branches.
 #'
 #' @param pa a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.
 #' @param tree a core gene phylogeny of class \link{phylo}
-#' @param nboot the number of bootstrap replicates to perform (default=100)
-#' @param quiet whether to print progress information (default=FALSE)
-#' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
 #' @param stochastic.mapping use stochastic mapping in place of maximum parsimony for ancestral state reconstruction (experimental)
+#' @param min_depth the minimum depth of a branch to be included in the regression. All branches are included by default.
+#' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
 #' @param ci_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.
+#' @param nboot the number of bootstrap replicates to perform (default=100)
+#' @param boot_type whether to resample by 'branch', the default, or by 'gene'
 #' @param conf A scalar indicating the confidence level of the required intervals (default=0.95).
 #' @param boot_pvalue whether or not to calculate bootstrap p-values (default=FALSE)
+#' @param quiet whether to print progress information (default=FALSE)
 #'
 #' @return a panfit object with the resulting parameter estimates and bootstrap replicates
 #'
@@ -31,14 +32,16 @@
 #' res$summary
 #'
 #' @export
-panstripe <- function(pa, tree, nboot=1000,
-                      quiet=FALSE, stochastic.mapping=FALSE, 
+panstripe <- function(pa, tree, 
+                      stochastic.mapping=FALSE, 
                       min_depth=NULL,
                       family='Tweedie', 
-                      ci_type='norm', 
-                      boot_type='branch', 
+                      ci_type='norm',
+                      nboot=1000,
+                      boot_type='branch',
                       conf=0.95,
-                      boot_pvalue=FALSE){
+                      boot_pvalue=FALSE,
+                      quiet=FALSE){
   
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
@@ -71,7 +74,7 @@ panstripe <- function(pa, tree, nboot=1000,
   } else{
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
+      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change)
     }))
     dat <- tibble::tibble(
       acc=rowSums(anc_states)[tree$edge[,2]],
@@ -166,7 +169,7 @@ panstripe <- function(pa, tree, nboot=1000,
   }
   
   return(
-    panstripe:::new_panfit(
+    new_panfit(
       summary = s,
       model = m,
       data = dat,

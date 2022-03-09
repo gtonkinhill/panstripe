@@ -60,7 +60,7 @@ For simplicity we consider a comparison with a simulated closed pangenome. This 
 sim_closed <- simulate_pan(rate = 0)
 ```
 
-Again we fit the a tweedie regression model after first estimating the gene gain/loss events per branch.
+Again we fit a Tweedie regression model after first estimating the gene gain/loss events per branch.
 
 ```{r}
 fit_closed <- panstripe(sim_closed$pa, sim_closed$tree, quiet=TRUE)
@@ -70,7 +70,8 @@ fit_closed$summary
 We can now test to see whether the choice of pangenome (open or closed) is significant.
 
 ```{r}
-compare_pangenomes(fit, fit_closed)
+comp <- compare_pangenomes(fit, fit_closed)
+comp$summary
 ```
 
 We can also plot the difference between the fits.
@@ -78,7 +79,7 @@ We can also plot the difference between the fits.
 ```{r}
 plot_pangenome_fits(list(
   open=fit, 
-  closed=fit_closed), boot = TRUE)
+  closed=fit_closed))
 ```
 
 #Investigate differences in the average size of gene gain/loss events
@@ -91,8 +92,8 @@ Sometimes we would like to know if it is the size rather than the rate of recomb
 First lets simulate and fit two pangenomes. One with a larger average recombination size (in number of genes).
 
 ```{r}
-sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 2)
-sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 10)
+sim_small_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 3)
+sim_large_rec <- simulate_pan(rate = 1e-3, mean_trans_size = 6)
 
 res_small_rec <- panstripe(sim_small_rec$pa, sim_small_rec$tree, quiet=TRUE)
 res_large_rec <- panstripe(sim_large_rec$pa, sim_large_rec$tree, quiet=TRUE)
@@ -114,15 +115,6 @@ plot_pangenome_fits(list(
   large=res_large_rec, 
   small=res_small_rec))
 ```
-
-We can look at how the estimated parameters for the Gamma and Poisson distributions vary with the core branch distance.
-
-```{r}
-plot_dist_params(list(
-  large=res_large_rec, 
-  small=res_small_rec))
-```
-
 
 ## References
 

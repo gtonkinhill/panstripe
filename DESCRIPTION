@@ -23,7 +23,9 @@ Imports:
     rlang,
     readr,
     boot,
-    dglm
+    dglm,
+    statmod,
+    tweedie
 LinkingTo: Rcpp
 Suggests: 
     knitr,

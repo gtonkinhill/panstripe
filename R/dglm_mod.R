@@ -1,7 +1,5 @@
 #' dglm_mod
-#'
-#' @description Function taken from the dglm package by Peter Dunn and Gordon Smyth. Adapted to be callable by other functions.
-#'
+#' Function taken from the dglm package by Peter Dunn and Gordon Smyth. Adapted to be callable by other functions.
 dglm_mod <- function (formula = NULL, dformula = ~1, family = stats::gaussian, 
                   dlink = "log", data = NULL, subset = NULL, weights = NULL, 
                   contrasts = NULL, method = "ml", mustart = NULL, betastart = NULL, 
@@ -19,7 +17,7 @@ dglm_mod <- function (formula = NULL, dformula = ~1, family = stats::gaussian,
     print(family)
     stop("'family' not recognized")
   }
-  mean.mframe <- model.frame(formula = formula, data = data)
+  mean.mframe <- stats::model.frame(formula = formula, data = data)
   y <- stats::model.response(mean.mframe, "numeric")
   if (is.null(dim(y))) {
     N <- length(y)
@@ -83,9 +81,9 @@ dglm_mod <- function (formula = NULL, dformula = ~1, family = stats::gaussian,
       n <- rep.int(1, nobs)
       mustart <- y
     })
-    dfamily <- structure(list(family = "Digamma", variance = varfun.digamma, 
+    dfamily <- structure(list(family = "Digamma", variance = statmod::varfun.digamma, 
                               dev.resids = function(y, mu, wt) {
-                                wt * unitdeviance.digamma(y, mu)
+                                wt * statmod::unitdeviance.digamma(y, mu)
                               }, aic = function(y, n, mu, wt, dev) NA, link = name.dlink, 
                               linkfun = linkfun, linkinv = linkinv, mu.eta = mu.eta, 
                               initialize = init, validmu = function(mu) {
