@@ -80,6 +80,10 @@ A table indicating a subset of the inferred parameters of the GLM. The p-values 
 
 - **depth** indicates whether the rate of gene gain and loss changes significantly with the depth of a branch. Typically, our ability to detect gene exchange events reduces for older ancestral branches.
 
+- **p** the inferred index parameter of the underlying Tweedie distribution used in the GLM
+
+- **phi** the inferred dispersion parameter of the GLM
+
 #### model
 
 The output of fitting the GLM model. This object can be used to predict how many gene gains and losses we would expect to observe given the parameters of a particular branch.
@@ -116,8 +120,8 @@ The `compare_genomes` function models the dispersion parameter using a separate 
 
 ```{r}
 # Simulate a fast gene gain/loss rate with error
-sim_fast <- simulate_pan(rate = 1e-3, ngenomes = 100)
-sim_slow <- simulate_pan(rate = 1e-4, ngenomes = 100)
+sim_fast <- simulate_pan(rate = 1e-3, ngenomes = 200)
+sim_slow <- simulate_pan(rate = 5e-4, ngenomes = 200)
 
 # Run panstripe
 fit_fast <- panstripe(sim_fast$pa, sim_fast$tree)
@@ -156,8 +160,8 @@ The `panstripe` model allows these two scenarios to be investigated by allowing 
 Here, we simulate two data sets with the same recombination rate but where each recombination event differs in the number of genes involved.
 
 ```{r}
-sim_large <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 6)
-sim_small <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 3)
+sim_large <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 3)
+sim_small <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 4)
 
 fit_large <- panstripe(sim_large$pa, sim_large$tree)
 fit_small <- panstripe(sim_small$pa, sim_small$tree)

@@ -105,6 +105,11 @@ gain and loss.
     significantly with the depth of a branch. Typically, our ability to
     detect gene exchange events reduces for older ancestral branches.
 
+-   **p** the inferred index parameter of the underlying Tweedie
+    distribution used in the GLM
+
+-   **phi** the inferred dispersion parameter of the GLM
+
 #### model
 
 The output of fitting the GLM model. This object can be used to predict
@@ -168,8 +173,8 @@ size of each event differs in the two pangenomes.
 
 ``` r
 # Simulate a fast gene gain/loss rate with error
-sim_fast <- simulate_pan(rate = 0.001, ngenomes = 100)
-sim_slow <- simulate_pan(rate = 1e-04, ngenomes = 100)
+sim_fast <- simulate_pan(rate = 0.001, ngenomes = 200)
+sim_slow <- simulate_pan(rate = 5e-04, ngenomes = 200)
 
 # Run panstripe
 fit_fast <- panstripe(sim_fast$pa, sim_fast$tree)
@@ -179,12 +184,12 @@ fit_slow <- panstripe(sim_slow$pa, sim_slow$tree)
 result <- compare_pangenomes(fit_fast, fit_slow)
 result$summary
 #> # A tibble: 4 × 7
-#>   term   estimate std.error statistic  p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>     <dbl>     <dbl>     <dbl>    <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.106    0.0404     -2.63 8.82e- 3           -0.188          -0.0180
-#> 2 istip     0.666    0.164       4.07 5.69e- 5            0.316           0.967 
-#> 3 core     -1.80     0.212      -8.49 4.41e-16           -2.19           -1.37  
-#> 4 dispe…   NA       NA          10.5  1.18e- 3           NA              NA
+#>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
+#>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
+#> 1 depth    -0.0826    0.0237    -3.49  5.09e-4          -0.122           -0.0380
+#> 2 istip     0.273     0.0976     2.80  5.22e-3           0.0782           0.443 
+#> 3 core     -0.457     0.126     -3.62  3.11e-4          -0.707           -0.212 
+#> 4 disper…  NA        NA          0.334 5.63e-1          NA               NA
 ```
 
 ## Open vs Closed
@@ -210,13 +215,13 @@ fit_closed$summary
 #> # A tibble: 7 × 7
 #>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 Interc… -21.4    2178.      -9.82e-3   0.992         -22.9            -20.9   
-#> 2 istip    22.7    2178.       1.04e-2   0.992          22.2             24.3   
-#> 3 core      0.0101 3694.       2.73e-6   1.00           -0.0520           0.0686
-#> 4 depth     0.0300    0.0288   1.04e+0   0.298          -0.0562           0.111 
-#> 5 istip:…  -0.171  3694.      -4.62e-5   1.00           -0.491            0.163 
-#> 6 p         1.05     NA       NA        NA               1.01             1.69  
-#> 7 phi       0.440    NA       NA        NA               0.335            0.677
+#> 1 Interc… -21.2    1817.      -1.16e-2   0.991          -24.1           -17.8   
+#> 2 istip    22.7    1817.       1.25e-2   0.990           19.4            25.6   
+#> 3 core     -0.0315 3178.      -9.91e-6   1.00            -0.117           0.0525
+#> 4 depth    -0.0452    0.0375  -1.20e+0   0.230           -0.149           0.0563
+#> 5 istip:…   0.102  3178.       3.23e-5   1.00            -0.172           0.373 
+#> 6 p         1.05     NA       NA        NA                1.00            1.66  
+#> 7 phi       0.401    NA       NA        NA                0.262           1.31
 ```
 
 The p-value indicates that there is not a significant association
@@ -239,8 +244,8 @@ Here, we simulate two data sets with the same recombination rate but
 where each recombination event differs in the number of genes involved.
 
 ``` r
-sim_large <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 6)
-sim_small <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 3)
+sim_large <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 3)
+sim_small <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 4)
 
 fit_large <- panstripe(sim_large$pa, sim_large$tree)
 fit_small <- panstripe(sim_small$pa, sim_small$tree)
@@ -249,12 +254,12 @@ fit_small <- panstripe(sim_small$pa, sim_small$tree)
 result <- compare_pangenomes(fit_fast, fit_slow)
 result$summary
 #> # A tibble: 4 × 7
-#>   term   estimate std.error statistic  p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>     <dbl>     <dbl>     <dbl>    <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.106    0.0404     -2.63 8.82e- 3           -0.179          -0.0276
-#> 2 istip     0.666    0.164       4.07 5.69e- 5            0.314           0.996 
-#> 3 core     -1.80     0.212      -8.49 4.41e-16           -2.22           -1.39  
-#> 4 dispe…   NA       NA          10.5  1.18e- 3           NA              NA
+#>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
+#>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
+#> 1 depth    -0.0826    0.0237    -3.49  5.09e-4          -0.121           -0.0381
+#> 2 istip     0.273     0.0976     2.80  5.22e-3           0.0972           0.432 
+#> 3 core     -0.457     0.126     -3.62  3.11e-4          -0.703           -0.215 
+#> 4 disper…  NA        NA          0.334 5.63e-1          NA               NA
 ```
 
 ## Plots

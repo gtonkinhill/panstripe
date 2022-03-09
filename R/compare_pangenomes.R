@@ -16,17 +16,18 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=0, ngenomes = 100, fn_error_rate=1, fp_error_rate=1, mean_trans_size=3)
-#' simB <- simulate_pan(rate=1e-3, ngenomes = 100, fn_error_rate=1, fp_error_rate=1, mean_trans_size=4)
-#' fitA <- panstripe(simA$pa, simA$tree, nboot=0, ci_type='norm')
+#' simA <- simulate_pan(rate=1e-4, ngenomes = 200, mean_trans_size=3)
+#' simB <- simulate_pan(rate=1e-3, ngenomes = 200, mean_trans_size=3)
+#' fitA <- panstripe(simA$pa, simA$tree, nboot=0)
 #' fitA$summary
-#' fitB <- panstripe(simB$pa, simB$tree, nboot=0, ci_type='norm')
+#' fitB <- panstripe(simB$pa, simB$tree, nboot=0)
 #' fitB$summary
 #' comp <- compare_pangenomes(fitA, fitB)
 #' comp$summary
 #'
 #' @export
-compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_type='norm', conf=0.95, nboot=100, boot_pvalue=FALSE){
+compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_type='norm', 
+                               conf=0.95, nboot=100, boot_pvalue=FALSE){
   
   # input checks
   if (class(fitA) != 'panfit') stop('fitA is not of class `panfit`!')
