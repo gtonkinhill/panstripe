@@ -40,13 +40,13 @@ Compares pangenomes using anova
 }
 \examples{
 
-simA <- simulate_pan(rate=1e-4, ngenomes = 200, mean_trans_size=3)
-simB <- simulate_pan(rate=1e-3, ngenomes = 200, mean_trans_size=3)
+simA <- simulate_pan(rate=0, ngenomes = 200, mean_trans_size=3, fp_error_rate=1)
+simB <- simulate_pan(rate=1e-3, ngenomes = 200, mean_trans_size=3, fp_error_rate=1)
 fitA <- panstripe(simA$pa, simA$tree, nboot=0)
 fitA$summary
 fitB <- panstripe(simB$pa, simB$tree, nboot=0)
 fitB$summary
-comp <- compare_pangenomes(fitA, fitB)
+comp <- compare_pangenomes(fitA, fitB, nboot=0)
 comp$summary
 
 }
