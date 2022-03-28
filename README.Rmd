@@ -63,7 +63,7 @@ fit <- panstripe(pa, tree)
 fit$summary
 
 # Plot results
-plot_pangenome_fits(fit, type='cumulative', include_data=TRUE)
+plot_pangenome_fits(fit, include_data=TRUE)
 ```
 
 A significant p-value for the `tip` term indicates that there is a different rate of gene exchange at the tips of the phylogeny compared with the internal branches. This is usually driven by annotation errors or highly mobile elements that do not persist long enough to be observed in multiple genomes.
@@ -189,23 +189,30 @@ A simple plot of the fit of the model along with the input data points can be ma
 plot_pangenome_fits(fit_fast)
 ```
 
-By default this will plot each branch separately. It is also possible to generate a cumulative version representing the total gene gain and loss events from the route of the phylogeny.
+By default this will plot just the model fit. It is also possible to include the data points of the branches located at the tips of the phylogeny. 
 
 ```{r}
-plot_pangenome_fits(fit_fast, type='cumulative')
+plot_pangenome_fits(fit_fast, include_data = TRUE)
 ```
 
-It is also possible to plot the data points along with the model fit
+The function can also take a named list as input allowing for easy comparisons between data sets. Optionally the plot can be trimmed to cover the same range when considering multiple pangenome curves.
 
 ```{r}
-plot_pangenome_fits(fit_fast, type='cumulative', include_data=TRUE)
+plot_pangenome_fits(list(fast=fit_fast, slow=fit_slow), trim=TRUE)
 ```
 
-The function can also take a named list as input allowing for easy comparisons between data sets
+The parameters and accompanying error bars can be plotted as
 
 ```{r}
-plot_pangenome_fits(list(fast=fit_fast, slow=fit_slow))
+plot_pangenome_params(list(fast=fit_fast, slow=fit_slow))
 ```
+
+A plot of the residuals of the regression can also be generated using
+
+```{r}
+plot_residuals(fit_fast)
+```
+
 
 ### Tree with presence/absence
 

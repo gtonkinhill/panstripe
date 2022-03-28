@@ -6,7 +6,6 @@
 \usage{
 plot_pangenome_fits(
   fit,
-  type = "individual",
   ci = TRUE,
   plot = TRUE,
   legend = TRUE,
@@ -19,8 +18,6 @@ plot_pangenome_fits(
 }
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple fits can be passed as a named list.}
-
-\item{type}{either 'cumulative' or 'individual' (default). Indicates whether or not to plot the cumulative sum of core and accessory branch lengths.}
 
 \item{ci}{whether or not to include the confidence interval ribbon (default=TRUE)}
 
@@ -42,16 +39,18 @@ plot_pangenome_fits(
 either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 }
 \description{
-Plots the fitted pangenome tweedie regression model.
+Plots the fitted pangenome regression model. 
+Optionally the data points representing the branches at the tips of the phylogeny can be included. 
+Internal branches are not plotted as this would require a third dimension to account for the depth of the branch. 
+The fit of the model can be further assessed using the \link{plot_residuals} function.
 }
 \examples{
 
 sim <- simulate_pan(rate=0)
 fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-plot_pangenome_fits(fA, color_pallete=6, type='individual', include_data=TRUE)
-plot_pangenome_fits(fA, color_pallete=6, type='cumulative', include_data=TRUE)
+plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
 sim <- simulate_pan(rate=1e-2)
 fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE)
 
 }

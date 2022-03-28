@@ -36,7 +36,7 @@ compare_pangenomes(
 a list containing a summary of the comparison and the resulting `glm` model object
 }
 \description{
-Compares pangenomes using anova
+Compares the coefficients between two pangenomes datasets by including interaction terms in the GLM.
 }
 \examples{
 

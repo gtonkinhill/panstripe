@@ -88,7 +88,7 @@ fit$summary
 #> 7 phi     2.20      NA        NA      NA                  1.82             3.15
 
 # Plot results
-plot_pangenome_fits(fit, type = "cumulative", include_data = TRUE)
+plot_pangenome_fits(fit, include_data = TRUE)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-4-1.png)<!-- -->
@@ -307,32 +307,41 @@ plot_pangenome_fits(fit_fast)
 
 ![](inst/vignette-supp/unnamed-chunk-8-1.png)<!-- -->
 
-By default this will plot each branch separately. It is also possible to
-generate a cumulative version representing the total gene gain and loss
-events from the route of the phylogeny.
+By default this will plot just the model fit. It is also possible to
+include the data points of the branches located at the tips of the
+phylogeny.
 
 ``` r
-plot_pangenome_fits(fit_fast, type = "cumulative")
+plot_pangenome_fits(fit_fast, include_data = TRUE)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-9-1.png)<!-- -->
 
-It is also possible to plot the data points along with the model fit
+The function can also take a named list as input allowing for easy
+comparisons between data sets. Optionally the plot can be trimmed to
+cover the same range when considering multiple pangenome curves.
 
 ``` r
-plot_pangenome_fits(fit_fast, type = "cumulative", include_data = TRUE)
+plot_pangenome_fits(list(fast = fit_fast, slow = fit_slow), trim = TRUE)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-10-1.png)<!-- -->
 
-The function can also take a named list as input allowing for easy
-comparisons between data sets
+The parameters and accompanying error bars can be plotted as
 
 ``` r
-plot_pangenome_fits(list(fast = fit_fast, slow = fit_slow))
+plot_pangenome_params(list(fast = fit_fast, slow = fit_slow))
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-11-1.png)<!-- -->
+
+A plot of the residuals of the regression can also be generated using
+
+``` r
+plot_residuals(fit_fast)
+```
+
+![](inst/vignette-supp/unnamed-chunk-12-1.png)<!-- -->
 
 ### Tree with presence/absence
 
@@ -347,7 +356,7 @@ variable_genes <- colnames(pa)[apply(pa, 2, sd) > 0]
 plot_tree_pa(tree = tree, pa = pa, genes = variable_genes, label_genes = FALSE, cols = "black")
 ```
 
-![](inst/vignette-supp/unnamed-chunk-12-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-13-1.png)<!-- -->
 
 ### Inferred ancestral states
 
@@ -360,7 +369,7 @@ mobile elements and annotation errors.
 plot_gain_loss(fit)
 ```
 
-![](inst/vignette-supp/unnamed-chunk-13-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-14-1.png)<!-- -->
 
 ### tSNE
 
@@ -371,7 +380,7 @@ evidence for clusters within the pangenome.
 plot_tsne(pa)
 ```
 
-![](inst/vignette-supp/unnamed-chunk-14-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-15-1.png)<!-- -->
 
 The [Mandrake](https://github.com/johnlees/mandrake) method can also be
 used as an alternative to tSNE.
@@ -387,7 +396,7 @@ compare methods.
 plot_acc(list(fast = sim_fast$pa, slow = sim_slow$pa))
 ```
 
-![](inst/vignette-supp/unnamed-chunk-15-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-16-1.png)<!-- -->
 
 ### Etymology
 

@@ -2,10 +2,12 @@
 #'
 #' @importFrom rlang .data
 #'
-#' @description Plots the fitted pangenome tweedie regression model.
+#' @description Plots the fitted pangenome regression model. 
+#' Optionally the data points representing the branches at the tips of the phylogeny can be included. 
+#' Internal branches are not plotted as this would require a third dimension to account for the depth of the branch. 
+#' The fit of the model can be further assessed using the \link{plot_residuals} function.
 #'
 #' @param fit the result of running the `panstripe` function. Multiple fits can be passed as a named list.
-#' @param type either 'cumulative' or 'individual' (default). Indicates whether or not to plot the cumulative sum of core and accessory branch lengths.
 #' @param ci whether or not to include the confidence interval ribbon (default=TRUE)
 #' @param plot whether to generate the plot (default) or return a data.frame
 #' @param legend toggles the display of the legend on and off
@@ -22,15 +24,13 @@
 #'
 #' sim <- simulate_pan(rate=0)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-#' plot_pangenome_fits(fA, color_pallete=6, type='individual', include_data=TRUE)
-#' plot_pangenome_fits(fA, color_pallete=6, type='cumulative', include_data=TRUE)
+#' plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
 #' sim <- simulate_pan(rate=1e-2)
 #' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, type='individual')
+#' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE)
 #' 
 #' @export
 plot_pangenome_fits <- function(fit,
-                                type='individual',
                                 ci=TRUE,
                                 plot=TRUE, 
                                 legend=TRUE,
@@ -50,39 +50,12 @@ plot_pangenome_fits <- function(fit,
     fit <- list(fit)
   }
   
-  if (!type %in% c('cumulative','individual')) stop("type must be one of either 'cumulative' or 'individual'!")
-  
   plot_data <- purrr::imap(fit, ~{
+
+    point_data <- .x$data %>% 
+      tibble::add_column(pangenome=.y, .before = 1) %>% 
+      dplyr::filter(istip)
     
-    if (type=='cumulative'){
-      temp_tree <- .x$tree
-      temp_tree$edge.length <- .x$data$acc
-      
-      # point_data <- tibble::tibble(
-      #   pangenome=.y,
-      #   acc = unlist(purrr::map(ape::subtrees(temp_tree), function(st) sum(st$edge.length)/length(st$tip.label))),
-      #   core = unlist(purrr::map(ape::subtrees(.x$tree), function(st) sum(st$edge.length)/length(st$tip.label))),
-      #   istip = FALSE
-      # )
-      
-      point_data <- tibble::tibble(
-        pangenome=.y,
-        acc = purrr::map_dbl(ape::subtrees(temp_tree), function(st) mean(ape::node.depth.edgelength(st)[1:length(st$tip.label)])),
-        core = purrr::map_dbl(ape::subtrees(.x$tree), function(st) mean(ape::node.depth.edgelength(st)[1:length(st$tip.label)])),
-        istip = FALSE
-      ) %>% dplyr::filter(core<=max(.x$data$core))
-      
-      # acc_d <- ape::cophenetic.phylo(temp_tree)
-      # point_data <- tibble::tibble(
-      #   pangenome=.y,
-      #   acc = acc_d[upper.tri(acc_d)],
-      #   core = ape::cophenetic.phylo(.x$tree)[upper.tri(acc_d)],
-      #   istip = FALSE
-      # )
-    } else{
-      point_data <- .x$data %>% 
-        tibble::add_column(pangenome=.y, .before = 1) #%>% dplyr::filter(istip)
-    }
     
     ilink <- family(.x$model)$linkinv
     
@@ -105,7 +78,7 @@ plot_pangenome_fits <- function(fit,
   })
   
   if (trim){
-    max_core <- min(purrr::map_dbl(fit, ~ max(.x$model$data$core)))
+    max_core <- min(purrr::map_dbl(plot_data, ~ max(.x$point_data$core)))
   } else {
     max_core <- Inf
   }
@@ -144,44 +117,17 @@ plot_pangenome_fits <- function(fit,
     }
   }
   
-  
   gg <- gg + 
     ggplot2::scale_colour_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::theme_bw(base_size = text_size) +
     ggplot2::xlab('core phylogentic branch distance') #+
   
+  
+  gg <- gg + ggplot2::ylab('accessory distance')
+  
   gg
-  if (type=='cumulative'){
-    gg + ggplot2::ylab('cumulative accessory distance')
-  } else {
-    gg + ggplot2::ylab('accessory distance')
-  }
   
   return(gg)
   
 }
-
-# node_depth_edge_weight <- function(tree, edge_weight){
-#   tree$edge.length <- edge_weight
-#   ape::node.depth.edgelength(tree)
-# }
-
-# node_path_length <- function(tree){
-#   all = c()
-#   edges <- purrr::map_chr(1:nrow(tree$edge), function(i) paste(sort(c(tree$edge[i,1], tree$edge[i,2])), collapse = ' '))
-#   edge_lengths <- tree$edge.length
-#   
-#   for (tip in 1:length(tree$tip.label)) {
-#     p <- ape::nodepath(tree, from = tip, to = length(tree$tip.label)+1)
-#     csm <- c()
-#     for (i in 2:length(p)){
-#       index <- which(edges==paste(sort(c(p[[i-1]], p[[i]])), collapse = ' '))
-#       csm <- c(csm, tree$edge.length[index])
-#       # edges <- edges[-index]
-#       # edge_lengths <- edge_lengths[-index]
-#     }
-#     all <- c(all, cumsum(csm))
-#   }
-#   return(all)
-# }
