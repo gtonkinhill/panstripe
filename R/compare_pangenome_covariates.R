@@ -60,7 +60,8 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   model <- stats::as.formula(paste(c("acc ~ istip + core + depth + istip:core",
                                      paste('depth', keep, sep=':'),
                                      paste('istip', keep, sep=':'),
-                                     paste('core', keep, sep=':')), collapse = ' + '))
+                                     paste('core', keep, sep=':'),
+                                     paste('istip:core', keep, sep=':')), collapse = ' + '))
   
   if(modeldisp){
     dmodel <- stats::as.formula(paste(c("acc ~ 1" , keep), collapse = ' + ')) 
