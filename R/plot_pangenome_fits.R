@@ -22,11 +22,11 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0)
-#' fA <- panstripe(sim$pa, sim$tree, nboot=100, ci_type='perc')
+#' sim <- simulate_pan(rate=1e-4)
+#' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 #' plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
 #' sim <- simulate_pan(rate=1e-3)
-#' fB <-panstripe(sim$pa, sim$tree, nboot=100, ci_type='perc')
+#' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, include_data=T)
 #' 
 #' @export
