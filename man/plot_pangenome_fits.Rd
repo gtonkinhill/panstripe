@@ -29,7 +29,7 @@ plot_pangenome_fits(
 
 \item{color_pallete}{the pallete number passed to `scale_fill_brewer`}
 
-\item{include_data}{whether or not to include raw data points in plot (default=FALSE)}
+\item{include_data}{whether or not to include raw data points in plot (default=FALSE) Note: The ribbon indicates the uncertainty in the estimated mean and thus not all points will lie within these margins.}
 
 \item{trim}{whether or not to trim the plots to cover the same range for each pangenome (default=TRUE)}
 
@@ -47,10 +47,10 @@ The fit of the model can be further assessed using the \link{plot_residuals} fun
 \examples{
 
 sim <- simulate_pan(rate=0)
-fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+fA <- panstripe(sim$pa, sim$tree, nboot=100, ci_type='perc')
 plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
-sim <- simulate_pan(rate=1e-2)
-fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
-plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE)
+sim <- simulate_pan(rate=1e-3)
+fB <-panstripe(sim$pa, sim$tree, nboot=100, ci_type='perc')
+plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE, include_data=T)
 
 }
