@@ -85,9 +85,9 @@ plot_pangenome_fits <- function(fit,
   
   plot_data <- list(
     point_data=purrr::map_dfr(plot_data, ~ .x$point_data) %>%
-      dplyr::filter(core<max_core),
+      dplyr::filter(.data$core<max_core),
     fit_data=purrr::map_dfr(plot_data, ~ .x$fit_data)%>%
-      dplyr::filter(core<max_core)
+      dplyr::filter(.data$core<max_core)
   )
   
   if (!plot){

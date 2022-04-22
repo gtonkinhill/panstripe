@@ -1,6 +1,6 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/gtonkinhill/panstripe/workflows/R-CMD-check/badge.svg)](https://github.com/gtonkinhill/panstripe/actions)
-<!-- [![DOI](https://zenodo.org/badge/137083307.svg)](https://zenodo.org/badge/latestdoi/137083307) -->
+[![DOI](https://zenodo.org/badge/353592486.svg)](https://zenodo.org/badge/latestdoi/353592486)
 <!-- badges: end -->
 
 

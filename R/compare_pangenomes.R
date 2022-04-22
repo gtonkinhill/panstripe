@@ -16,7 +16,7 @@
 #'
 #' @examples
 #'
-#' simA <- simulate_pan(rate=0, ngenomes = 200, mean_trans_size=3, fp_error_rate=1)
+#' simA <- simulate_pan(rate=1e-4, ngenomes = 200, mean_trans_size=3, fp_error_rate=1)
 #' simB <- simulate_pan(rate=1e-3, ngenomes = 200, mean_trans_size=3, fp_error_rate=1)
 #' fitA <- panstripe(simA$pa, simA$tree, nboot=0)
 #' fitA$summary
@@ -43,9 +43,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
   # check for all 0's
   if ((sum(fitA$data$acc[!fitA$data$istip])==0) | (sum(fitA$data$acc[fitA$data$istip])==0) |
     (sum(fitB$data$acc[!fitB$data$istip])==0) | (sum(fitB$data$acc[fitB$data$istip])==0)) {
-    warning(paste0("No gene gains/losses identified at all phylogeny and/or tips in one or both pangenomes!" 
-            ,"\nSeparation may be a problem so switching to a Gaussian model!"))
-    family <- 'gaussian'
+    warning("No gene gains/losses identified at all at internal branches or tips in one or both pangenomes!")
   }
   
   # model
@@ -57,24 +55,9 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
   }
 
   if (family=='Tweedie'){
-    m <- tryCatch({
-      fit_double_tweedie(model, dmodel=dmodel, data = dat)
-    },
-    error=function(cond){
-      warning(cond)
-      warning("\nModel could not converge! Swapping to using Gaussian family!")
-      return(NULL)
-    })
-    
-    if(!is.null(m)){
-      m$null.deviance <- NA
-      a <- anova.dglm.basic(m, tweedie.power = m$p)
-    } else {
-      family <- 'gaussian'
-    }
-  } 
-  
-  if (family!="Tweedie") {
+    m <- fit_double_tweedie(model, dmodel=dmodel, data = dat)
+    a <- anova.dglm.basic(m, tweedie.power = m$p)
+  } else {
     m <- stats::glm(model, dat, family = family)
   }
   
@@ -148,14 +131,31 @@ double_tweedie_llk <- function(p, model, dmodel, data){
 }
 
 fit_double_tweedie <- function(model, dmodel, data){
-  op <- stats::optimise(double_tweedie_llk, lower = 1, upper = 1.99, model=model, dmodel=dmodel, data=data)
-  tm <- dglm_mod(formula = model,  
-                 dformula =  dmodel,
-                 data = data,
-                 family = statmod::tweedie(var.power = op$minimum, link.power = 0), 
-                 tweedie.var.power=op$minimum)
-  tm$p <- op$minimum
-  return(tm)
+  fm <- tryCatch(
+    {
+      op <- stats::optimise(double_tweedie_llk, lower = 1.01, upper = 1.99, model=model, dmodel=dmodel, data=data)
+      tm <- dglm_mod(formula = model,  
+                     dformula =  dmodel,
+                     data = data,
+                     family = statmod::tweedie(var.power = op$minimum, link.power = 0), 
+                     tweedie.var.power=op$minimum)
+      tm$p <- op$minimum
+      return(tm)
+    },
+    error=function(cond) {
+      stop(
+        "Panstripe model fit failed! This can sometime be caused by unusual branch lengths.
+Setting family='gaussian' often provides a more stable fit to difficult datasets"
+      )
+    }
+  )
+  if (!fm$converged) {
+    warning(
+      "Panstripe model fit failed to converge!
+Setting family='gaussian' often provides a more stable fit to difficult datasets"
+    )
+  }
+  return(fm)
 }
 
 fit_double_model <- function(d, indices=NULL, model, dmodel){

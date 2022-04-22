@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=1e-4, mean_trans_size=5, fn_error_rate=1, fp_error_rate=2)
+#' sim <- simulate_pan(rate=0, mean_trans_size=5, fn_error_rate=1, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -28,7 +28,7 @@
 #' ci_type='perc'
 #' boot_type='branch'
 #' conf=0.95
-#' res <- panstripe(sim$pa, sim$tree, ci_type='norm', boot_type='branch', nboot=100, boot_pvalue=TRUE)
+#' res <- panstripe(sim$pa, sim$tree, nboot=0, family='gaussian')
 #' res$summary
 #'
 #' @export
@@ -180,18 +180,37 @@ panstripe <- function(pa, tree,
 }
 
 twd_llk <- function(p, model, data) {
-  tm <- stats::glm(model, data, family = statmod::tweedie(var.power = p, link.power = 0))
+  suppressWarnings({
+    tm <- stats::glm(model, data, family = statmod::tweedie(var.power = p, link.power = 0))
+  })
   tsm <- summary(tm)
   -sum(log(tweedie::dtweedie(y = tm$y, mu = tm$fitted.values, phi = tsm$dispersion, power = p)))
 }
 
 fit_tweedie <- function(model, data){
-  op <- stats::optimise(twd_llk, lower = 1, upper = 2, model=model, data=data)
-  tm <- stats::glm(model, data, family = statmod::tweedie(var.power = op$minimum, link.power = 0))
-  stm <- summary(tm)
-  tm$p <- op$minimum
-  tm$phi <- stm$dispersion
-  return(tm)
+  fm <- tryCatch(
+    {
+      op <- stats::optimise(twd_llk, lower = 1, upper = 2, model=model, data=data)
+      tm <- stats::glm(model, data, family = statmod::tweedie(var.power = op$minimum, link.power = 0))
+      stm <- summary(tm)
+      tm$p <- op$minimum
+      tm$phi <- stm$dispersion
+      return(tm)
+    },
+    error=function(cond) {
+      stop(
+"Panstripe model fit failed! This can sometime be caused by unusual branch lengths.
+Setting family='gaussian' often provides a more stable fit to difficult datasets"
+          )
+    }
+  )
+  if (!fm$converged) {
+    warning(
+"Panstripe model fit failed to converge!
+Setting family='gaussian' often provides a more stable fit to difficult datasets"
+    )
+  }
+  return(fm)
 }
 
 fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, family, boot_type){

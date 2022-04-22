@@ -30,7 +30,7 @@ plot_residuals <- function(fit,
   
   plot_data <- fit$model$data %>%
     tibble::add_column(residuals = statmod::qresiduals(fit$model)) %>%
-    tibble::add_column(predicted = predict(fit$model, type = 'response', data=fit$data))
+    tibble::add_column(predicted = stats::predict(fit$model, type = 'response', data=fit$data))
   
   if (!plot){
     return(plot_data)
@@ -50,7 +50,7 @@ plot_residuals <- function(fit,
   # 
   # gg1
   
-  gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=core, y=residuals)) +
+  gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$residuals)) +
     ggplot2::geom_point() +
     ggplot2::geom_hline(yintercept = 0)
   

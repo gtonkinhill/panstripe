@@ -12,6 +12,7 @@
 #' @param text_size the base text size of the plot (default=14)
 #' @param color_pallete the pallete number passed to `scale_fill_brewer`
 #' @param facet whether or not to generate separate plots for each pangenome (default=FALSE).
+#' @param smooth adds a linear line to aid the eye in seeing patters. This is NOT the model fit inferred by Panstripe. (default=FALSE)
 #'
 #' @return either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
 #'
@@ -20,7 +21,7 @@
 #' sim <- simulate_pan(rate=0)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=0)
 #' plot_pangenome_cumulative(fA, color_pallete=6)
-#' sim <- simulate_pan(rate=1e-4)
+#' sim <- simulate_pan(rate=1e-3)
 #' fB <-panstripe(sim$pa, sim$tree, nboot=0)
 #' plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6)
 #' 
@@ -30,7 +31,8 @@ plot_pangenome_cumulative <- function(fit,
                                 legend=TRUE,
                                 text_size=14,
                                 color_pallete=6,
-                                facet=FALSE){
+                                facet=FALSE,
+                                smooth=FALSE){
   # check inputs
   if (class(fit)!='panfit'){
     purrr::map(fit, ~{
@@ -61,14 +63,19 @@ plot_pangenome_cumulative <- function(fit,
   }
   
   if (length(fit)>1) {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc, shape=tip, colour=.data$pangenome)) + 
-      ggplot2::geom_point()
+    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc, colour=.data$pangenome)) + 
+      ggplot2::geom_point(ggplot2::aes(shape=.data$tip))
     if (facet){
       gg <- gg + ggplot2::facet_wrap(~pangenome, ncol = 1)
     }
   } else {
-    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc, shape=tip))+ 
-      ggplot2::geom_point()
+    gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc))+ 
+      ggplot2::geom_point(ggplot2::aes(shape=.data$tip))
+  }
+  
+  if (smooth){
+    warning("Adding trend line using 'ggplot2::geom_smooth'. This is not the panstripe fit.")
+    gg <- gg + ggplot2::geom_smooth(method=stats::lm, level=0.95)
   }
   
   gg <- gg + 

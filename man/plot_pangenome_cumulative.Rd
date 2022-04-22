@@ -10,7 +10,8 @@ plot_pangenome_cumulative(
   legend = TRUE,
   text_size = 14,
   color_pallete = 6,
-  facet = FALSE
+  facet = FALSE,
+  smooth = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ plot_pangenome_cumulative(
 \item{color_pallete}{the pallete number passed to `scale_fill_brewer`}
 
 \item{facet}{whether or not to generate separate plots for each pangenome (default=FALSE).}
+
+\item{smooth}{adds a linear line to aid the eye in seeing patters. This is NOT the model fit inferred by Panstripe. (default=FALSE)}
 }
 \value{
 either a ggplot2 object or a `data.frame` with the data needed to recreate the plot
@@ -39,7 +42,7 @@ can not be included as Panstripe models the individual branches rather than the 
 sim <- simulate_pan(rate=0)
 fA <- panstripe(sim$pa, sim$tree, nboot=0)
 plot_pangenome_cumulative(fA, color_pallete=6)
-sim <- simulate_pan(rate=1e-4)
+sim <- simulate_pan(rate=1e-3)
 fB <-panstripe(sim$pa, sim$tree, nboot=0)
 plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6)
 
