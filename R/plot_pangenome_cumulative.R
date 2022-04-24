@@ -18,12 +18,12 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0)
+#' sim <- simulate_pan(rate=1e-4)
 #' fA <- panstripe(sim$pa, sim$tree, nboot=0)
 #' plot_pangenome_cumulative(fA, color_pallete=6)
 #' sim <- simulate_pan(rate=1e-3)
 #' fB <-panstripe(sim$pa, sim$tree, nboot=0)
-#' plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6)
+#' plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6, smooth=TRUE)
 #' 
 #' @export
 plot_pangenome_cumulative <- function(fit,
@@ -74,8 +74,13 @@ plot_pangenome_cumulative <- function(fit,
   }
   
   if (smooth){
-    warning("Adding trend line using 'ggplot2::geom_smooth'. This is not the panstripe fit.")
-    gg <- gg + ggplot2::geom_smooth(method=stats::lm, level=0.95)
+    warning("Adding trend line using 'ggplot2::geom_smooth'. This is not the panstripe fit!")
+    # op <- stats::optimise(twd_llk, lower = 1, upper = 2, 
+    #                       model=stats::as.formula("acc ~ core"), 
+    #                       data=plot_data)
+    gg <- gg + ggplot2::geom_smooth(method ='glm',
+                                    method.args = list(family = 'quasipoisson'), 
+                                    level = 0.95)
   }
   
   gg <- gg + 

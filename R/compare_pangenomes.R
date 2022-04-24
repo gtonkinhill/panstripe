@@ -145,7 +145,7 @@ fit_double_tweedie <- function(model, dmodel, data){
     error=function(cond) {
       stop(
         "Panstripe model fit failed! This can sometime be caused by unusual branch lengths.
-Setting family='gaussian' often provides a more stable fit to difficult datasets"
+Setting family='quasipoisson' or 'gaussian' often provides a more stable fit to difficult datasets"
       )
     }
   )

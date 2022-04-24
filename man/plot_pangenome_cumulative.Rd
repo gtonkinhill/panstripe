@@ -39,11 +39,11 @@ can not be included as Panstripe models the individual branches rather than the 
 }
 \examples{
 
-sim <- simulate_pan(rate=0)
+sim <- simulate_pan(rate=1e-4)
 fA <- panstripe(sim$pa, sim$tree, nboot=0)
 plot_pangenome_cumulative(fA, color_pallete=6)
 sim <- simulate_pan(rate=1e-3)
 fB <-panstripe(sim$pa, sim$tree, nboot=0)
-plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6)
+plot_pangenome_cumulative(list(a=fA,b=fB), color_pallete=6, smooth=TRUE)
 
 }
