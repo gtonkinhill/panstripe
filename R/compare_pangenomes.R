@@ -22,7 +22,7 @@
 #' fitA$summary
 #' fitB <- panstripe(simB$pa, simB$tree, nboot=0)
 #' fitB$summary
-#' comp <- compare_pangenomes(fitA, fitB, nboot=0)
+#' comp <- compare_pangenomes(fitA, fitB, nboot=10)
 #' comp$summary
 #'
 #' @export
@@ -37,17 +37,17 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
   
   #combine data
   dat <- purrr::imap_dfr(list(fitA, fitB), ~{
-    tibble::add_column(.x$data, pangenome=LETTERS[[.y]], .before=1)
+    tibble::add_column(.x$data, pangenome=.y-1, .before=1)
   })
   
   # check for all 0's
-  if ((sum(fitA$data$acc[!fitA$data$istip])==0) | (sum(fitA$data$acc[fitA$data$istip])==0) |
-    (sum(fitB$data$acc[!fitB$data$istip])==0) | (sum(fitB$data$acc[fitB$data$istip])==0)) {
+  if ((sum(fitA$data$acc[fitA$data$istip==0])==0) | (sum(fitA$data$acc[fitA$data$istip==1])==0) |
+    (sum(fitB$data$acc[fitB$data$istip==0])==0) | (sum(fitB$data$acc[fitB$data$istip==1])==0)) {
     warning("No gene gains/losses identified at all at internal branches or tips in one or both pangenomes!")
   }
   
   # model
-  model <- stats::as.formula("acc ~ istip + core + depth + istip:core + depth:pangenome + istip:pangenome + core:pangenome + istip:core:pangenome")
+  model <- stats::as.formula("acc ~  istip + core + depth + istip:core + depth:pangenome + istip:pangenome + core:pangenome + istip:core:pangenome")
   if (modeldisp){
     dmodel <- stats::as.formula("acc ~ pangenome")
   } else {
@@ -63,7 +63,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
   
   s <- summary(m)$coefficients %>% 
     tibble::as_tibble(rownames = 'term')
-  s <- s[s$term %in% c('istipTRUE:pangenomeB', 'core:pangenomeB', 'depth:pangenomeB'), , drop=FALSE]
+  s <- s[s$term %in% c('istip:pangenome', 'core:pangenome', 'depth:pangenome'), , drop=FALSE]
   s$term <- gsub("[T:].*", "", s$term)
   colnames(s) <- c('term','estimate','std.error','statistic','p.value')
   
@@ -92,7 +92,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
                               model=model, family=family, boot_type='branch')
     }
     
-    ci <- purrr::map_dfr(which(grepl('.*pangenome.*', names(m$coefficients))), ~{
+    ci <- purrr::map_dfr(which(grepl('^[a-z]+:pangenome$', names(m$coefficients))), ~{
       df <- as.data.frame(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
                                              theta_null=0, ci_conf=conf,
                                              transformation='identity', calc_pval = boot_pvalue)))

@@ -46,7 +46,7 @@ fitA <- panstripe(simA$pa, simA$tree, nboot=0)
 fitA$summary
 fitB <- panstripe(simB$pa, simB$tree, nboot=0)
 fitB$summary
-comp <- compare_pangenomes(fitA, fitB, nboot=0)
+comp <- compare_pangenomes(fitA, fitB, nboot=10)
 comp$summary
 
 }

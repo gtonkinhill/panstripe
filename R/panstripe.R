@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0, mean_trans_size=5, fn_error_rate=1, fp_error_rate=2)
+#' sim <- simulate_pan(rate=0, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -28,7 +28,7 @@
 #' ci_type='perc'
 #' boot_type='branch'
 #' conf=0.95
-#' res <- panstripe(sim$pa, sim$tree, nboot=0, family='gaussian')
+#' res <- panstripe(sim$pa, sim$tree, nboot=100, family='Tweedie')
 #' res$summary
 #'
 #' @export
@@ -63,7 +63,7 @@ panstripe <- function(pa, tree,
   index <- which(apply(pa, 2, function(x) length(unique(x)))>1)
   
   if (asr_method=='ML'){
-    # use maximum liklihood
+    # use maximum likelihood
     anc_states <- do.call(cbind, purrr::map(index, ~{
       a <- ape::ace(x = pa[,.x], phy = tree, type = 'discrete')
       mx <- c(pa[,.x], apply(a$lik.anc, 1, which.max)-1)
@@ -79,7 +79,7 @@ panstripe <- function(pa, tree,
   dat <- tibble::tibble(
     acc=rowSums(anc_states),
     core=tree$edge.length,
-    istip=tree$edge[,2]<=length(tree$tip.label) 
+    istip=as.numeric(tree$edge[,2]<=length(tree$tip.label) )
   )
   
   # add depth and filter if requested
@@ -90,14 +90,14 @@ panstripe <- function(pa, tree,
   }
   
   # check for all 0's
-  if (sum(dat$acc[!dat$istip])==0) {
+  if (sum(dat$acc[dat$istip==0])==0) {
     warning("No gene gains/losses identified on internal branches! Separation may be a problem.")
-  } else if (sum(dat$acc[dat$istip])==0) {
+  } else if (sum(dat$acc[dat$istip==1])==0) {
     warning("No gene gains/losses identified at phylogeny tips! Separation may be a problem.")
   }
   
   # fit model
-  model <- stats::as.formula("acc ~ istip + core + depth + istip:core")
+  model <- stats::as.formula("acc ~ 0 + istip + core + depth + istip:core")
   
   # fit model
   if (is.character(family) && (family=="Tweedie")){
@@ -109,9 +109,9 @@ panstripe <- function(pa, tree,
   }
   
   sm <- summary(m)
-  coef_names <- strsplit(as.character(model), ' \\+ ')[[3]]
+  coef_names <- strsplit(as.character(model), ' \\+ ')[[3]][-1]
   s <- tibble::tibble(
-    term = c('Intercept', coef_names, 'p', 'phi'),
+    term = c(coef_names, 'p', 'phi'),
     estimate = coef,
     std.error=c(sm$coefficients[,2], NA, NA),
     statistic=c(sm$coefficients[,3], NA, NA),
@@ -133,7 +133,7 @@ panstripe <- function(pa, tree,
     }
     
     # calculate CIs and p-values
-    mindex <- length(coef_names) + 1
+    mindex <- length(coef_names) 
     if (is.character(family) && (family=="Tweedie")) mindex <- mindex + 2
     ci <- do.call(rbind, purrr::map(1:mindex, ~{
       transformation <- 'identity'
@@ -180,9 +180,9 @@ panstripe <- function(pa, tree,
 }
 
 twd_llk <- function(p, model, data) {
-  suppressWarnings({
+  # suppressWarnings({
     tm <- stats::glm(model, data, family = statmod::tweedie(var.power = p, link.power = 0))
-  })
+  # })
   tsm <- summary(tm)
   -sum(log(tweedie::dtweedie(y = tm$y, mu = tm$fitted.values, phi = tsm$dispersion, power = p)))
 }

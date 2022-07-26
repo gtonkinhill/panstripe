@@ -23,10 +23,10 @@
 #' @examples
 #'
 #' sim <- simulate_pan(rate=1e-4)
-#' fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+#' fA <- panstripe(sim$pa, sim$tree, nboot=0, ci_type='perc')
 #' plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
 #' sim <- simulate_pan(rate=1e-3)
-#' fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+#' fB <-panstripe(sim$pa, sim$tree, nboot=0, ci_type='perc')
 #' plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE)
 #' 
 #' @export
@@ -54,7 +54,7 @@ plot_pangenome_fits <- function(fit,
 
     point_data <- .x$data %>% 
       tibble::add_column(pangenome=.y, .before = 1) %>% 
-      dplyr::filter(istip)
+      dplyr::filter(istip==1)
     
     
     ilink <- family(.x$model)$linkinv
@@ -62,7 +62,7 @@ plot_pangenome_fits <- function(fit,
     p <- predict(.x$model, type = 'link', se.fit = TRUE,
                  newdata=data.frame(
                    core = seq(0,max(point_data$core), length.out=100),
-                   istip = TRUE,
+                   istip = 1,
                    depth = max(.x$model$data$depth)-seq(0,max(point_data$core), length.out=100)
                  ))
 

@@ -50,7 +50,7 @@ Includes covariates to control for the impact of annotation errors and the depth
 }
 \examples{
 
-sim <- simulate_pan(rate=0, mean_trans_size=5, fn_error_rate=1, fp_error_rate=2)
+sim <- simulate_pan(rate=0, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
 pa <- sim$pa
 tree <- sim$tree
 nboot <- 100
@@ -58,7 +58,7 @@ family <- 'Tweedie'
 ci_type='perc'
 boot_type='branch'
 conf=0.95
-res <- panstripe(sim$pa, sim$tree, nboot=0, family='gaussian')
+res <- panstripe(sim$pa, sim$tree, nboot=100, family='Tweedie')
 res$summary
 
 }

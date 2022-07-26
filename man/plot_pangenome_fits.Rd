@@ -47,10 +47,10 @@ The fit of the model can be further assessed using the \link{plot_residuals} fun
 \examples{
 
 sim <- simulate_pan(rate=1e-4)
-fA <- panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+fA <- panstripe(sim$pa, sim$tree, nboot=0, ci_type='perc')
 plot_pangenome_fits(fA, color_pallete=6, include_data=TRUE)
 sim <- simulate_pan(rate=1e-3)
-fB <-panstripe(sim$pa, sim$tree, nboot=10, ci_type='perc')
+fB <-panstripe(sim$pa, sim$tree, nboot=0, ci_type='perc')
 plot_pangenome_fits(list(a=fA,b=fB), color_pallete=6, ci=TRUE)
 
 }
