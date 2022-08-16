@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=0, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
+#' sim <- simulate_pan(rate=1e-4, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -33,7 +33,7 @@
 #'
 #' @export
 panstripe <- function(pa, tree, 
-                      asr_method="max_parsimony", 
+                      asr_method="max.parsimony", 
                       min_depth=NULL,
                       family='Tweedie', 
                       ci_type='norm',
@@ -46,7 +46,7 @@ panstripe <- function(pa, tree,
   #check inputs
   if (nrow(pa) != length(tree$tip.label)) stop('number of taxa in tree and p/a matrix need to be the same!')
   if(!all(rownames(pa) %in% tree$tip.label)) stop('taxa labels in p/a matrix and tree do not match!')
-  if(!asr_method %in% c('max_parsimony', 'ML')) stop("asr_method must be one of 'max_parsimony' or 'ML'")
+  if(!asr_method %in% c('max.parsimony', 'max.likelihood', 'stochastic.map')) stop("asr_method must be one of 'max.parsimony', 'max.likelihood' or 'stochastic.map'")
   
   if (!(is.character(family) && (family=="Tweedie"))){
     if (is.character(family)) 
@@ -62,14 +62,17 @@ panstripe <- function(pa, tree,
   pa <- pa[match(tree$tip.label, rownames(pa)),,drop=FALSE]
   index <- which(apply(pa, 2, function(x) length(unique(x)))>1)
   
-  if (asr_method=='ML'){
+  if (asr_method=='max.likelihood'){
     # use maximum likelihood
     anc_states <- do.call(cbind, purrr::map(index, ~{
       a <- ape::ace(x = pa[,.x], phy = tree, type = 'discrete')
       mx <- c(pa[,.x], apply(a$lik.anc, 1, which.max)-1)
       return(1*(mx[tree$edge[,2]]!=mx[tree$edge[,1]]))
     }))
-  } else{
+  } else if (asr_method=='stochastic.map') {
+    sf <- sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
+    anc_states <- exp(sf$mapped.edge.lmt)
+  } else {
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
       return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change[tree$edge[,2]])
