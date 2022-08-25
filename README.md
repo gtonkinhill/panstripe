@@ -16,21 +16,26 @@ In particular it aims to replace the dubious but popular pangenome
 accumulation curve. The package is currently under development so
 frequent changes are to be expected.
 
--   [Installation](#installation)
--   [Quick Start](#quick-start)
--   [Citation](#citation)
--   [Comparing Pangenomes](#comparing-pangenomes)
--   [Open vs Closed](#open-vs-closed)
--   [Rate vs Size](#rate-vs-size)
--   [Output](#output)
--   [Alternative models](#alternative-models)
--   [Plots](#plots)
-    -   [Pangenome fit](#pangenome-fit)
-    -   [Tree with presence/absence](#tree-with-presenceabsence)
-    -   [Inferred ancestral states](#inferred-ancestral-states)
-    -   [tSNE](#tsne)
-    -   [Accumulation curves](#accumulation-curves)
-    -   [Etymology](#etymology)
+-   <a href="#installation" id="toc-installation">Installation</a>
+-   <a href="#quick-start" id="toc-quick-start">Quick Start</a>
+-   <a href="#citation" id="toc-citation">Citation</a>
+-   <a href="#comparing-pangenomes" id="toc-comparing-pangenomes">Comparing
+    Pangenomes</a>
+-   <a href="#open-vs-closed" id="toc-open-vs-closed">Open vs Closed</a>
+-   <a href="#rate-vs-size" id="toc-rate-vs-size">Rate vs Size</a>
+-   <a href="#output" id="toc-output">Output</a>
+-   <a href="#alternative-models" id="toc-alternative-models">Alternative
+    models</a>
+-   <a href="#plots" id="toc-plots">Plots</a>
+    -   <a href="#pangenome-fit" id="toc-pangenome-fit">Pangenome fit</a>
+    -   <a href="#tree-with-presenceabsence"
+        id="toc-tree-with-presenceabsence">Tree with presence/absence</a>
+    -   <a href="#inferred-ancestral-states"
+        id="toc-inferred-ancestral-states">Inferred ancestral states</a>
+    -   <a href="#tsne" id="toc-tsne">tSNE</a>
+    -   <a href="#accumulation-curves" id="toc-accumulation-curves">Accumulation
+        curves</a>
+    -   <a href="#etymology" id="toc-etymology">Etymology</a>
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -64,11 +69,11 @@ library(panstripe)
 library(ape)
 set.seed(1234)
 
-### NOTE: here we load example files from the panstripe package. You should replace
-### these variables with the relevant paths to the files you are using.
+### NOTE: here we load example files from the panstripe package. You should
+### replace these variables with the relevant paths to the files you are using.
 phylo.file.name <- system.file("extdata", "tree.newick", package = "panstripe")
 rtab.file.name <- system.file("extdata", "gene_presence_absence.Rtab", package = "panstripe")
-### 
+###
 
 # Load files
 pa <- read_rtab(rtab.file.name)
@@ -77,16 +82,15 @@ tree <- read.tree(phylo.file.name)
 # Run panstripe
 fit <- panstripe(pa, tree)
 fit$summary
-#> # A tibble: 7 × 7
-#>   term   estimate std.error statistic  p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>     <dbl>     <dbl>     <dbl>    <dbl>            <dbl>            <dbl>
-#> 1 Inter…  0.949      0.247     3.85    2.16e-4            0.476            1.43 
-#> 2 istip   0.708      0.313     2.27    2.58e-2            0.109            1.28 
-#> 3 core    1.82       0.363     5.01    2.63e-6            1.01             2.56 
-#> 4 depth  -0.00302    0.0569   -0.0531  9.58e-1           -0.118            0.124
-#> 5 istip… -0.784      0.474    -1.65    1.01e-1           -1.76             0.264
-#> 6 p       1.19      NA        NA      NA                  1.12             1.35 
-#> 7 phi     2.20      NA        NA      NA                  1.82             3.15
+#> # A tibble: 6 × 7
+#>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
+#>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
+#> 1 istip   1.49      0.282      5.29   8.03e- 7           0.987             1.98 
+#> 2 core    2.97      0.247     12.0    9.69e-21           2.43              3.43 
+#> 3 depth   0.0572    0.0619     0.923  3.58e- 1          -0.0605            0.185
+#> 4 isti…  -1.93      0.431     -4.48   2.10e- 5          -2.71             -1.06 
+#> 5 p       1.25     NA         NA     NA                  1.14              1.44 
+#> 6 phi     2.58     NA         NA     NA                  2.06              3.82
 
 # Plot results
 plot_pangenome_fits(fit, include_data = TRUE)
@@ -142,10 +146,10 @@ result$summary
 #> # A tibble: 4 × 7
 #>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.0573    0.0259    -2.22  2.68e-2          -0.0974          -0.0107
-#> 2 istip    -0.0510    0.167     -0.305 7.61e-1          -0.345            0.188 
-#> 3 core     -0.693     0.161     -4.30  1.91e-5          -1.01            -0.391 
-#> 4 disper…  NA        NA          0.387 5.34e-1          NA               NA
+#> 1 depth    -0.0578    0.0268    -2.16  3.14e-2          -0.0990         -0.00988
+#> 2 istip    -0.0464    0.173     -0.268 7.88e-1          -0.346           0.199  
+#> 3 core     -0.683     0.165     -4.15  3.74e-5          -1.00           -0.380  
+#> 4 disper…  NA        NA          0.439 5.08e-1          NA              NA
 ```
 
 A significant p-value for the `tip` term indicates that the two
@@ -188,16 +192,15 @@ sim_closed <- simulate_pan(rate = 0, ngenomes = 100)
 fit_closed <- panstripe(sim_closed$pa, sim_closed$tree)
 
 fit_closed$summary
-#> # A tibble: 7 × 7
-#>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 Interc… -21.2    1817.      -1.16e-2   0.991          -24.1           -17.8   
-#> 2 istip    22.7    1817.       1.25e-2   0.990           19.4            25.6   
-#> 3 core     -0.0315 3178.      -9.91e-6   1.00            -0.117           0.0525
-#> 4 depth    -0.0452    0.0375  -1.20e+0   0.230           -0.149           0.0563
-#> 5 istip:…   0.102  3178.       3.23e-5   1.00            -0.172           0.373 
-#> 6 p         1.05     NA       NA        NA                1.00            1.66  
-#> 7 phi       0.401    NA       NA        NA                0.262           1.31
+#> # A tibble: 6 × 7
+#>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
+#>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
+#> 1 istip  1.53e+0   1.43e-1   10.7     3.09e-21            1.14            1.93  
+#> 2 core  -7.23e+2   3.80e+4   -0.0190  9.85e- 1         -884.           -613.    
+#> 3 depth -4.52e-2   3.74e-2   -1.21    2.29e- 1           -0.149           0.0563
+#> 4 isti…  7.23e+2   3.80e+4    0.0190  9.85e- 1          613.            884.    
+#> 5 p      1.05e+0  NA         NA      NA                   1.00            1.60  
+#> 6 phi    3.99e-1  NA         NA      NA                   0.272           1.03
 ```
 
 The p-value indicates that there is not a significant association
@@ -220,22 +223,22 @@ Here, we simulate two data sets with the same recombination rate but
 where each recombination event differs in the number of genes involved.
 
 ``` r
-sim_large <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 3)
-sim_small <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 4)
+sim_large <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 4)
+sim_small <- simulate_pan(rate = 0.001, ngenomes = 100, mean_trans_size = 3)
 
 fit_large <- panstripe(sim_large$pa, sim_large$tree)
 fit_small <- panstripe(sim_small$pa, sim_small$tree)
 
 # Compare the fits
-result <- compare_pangenomes(fit_fast, fit_slow)
+result <- compare_pangenomes(fit_large, fit_small)
 result$summary
 #> # A tibble: 4 × 7
 #>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.0573    0.0259    -2.22  2.68e-2           -0.101         -0.00792
-#> 2 istip    -0.0510    0.167     -0.305 7.61e-1           -0.307          0.178  
-#> 3 core     -0.693     0.161     -4.30  1.91e-5           -1.02          -0.372  
-#> 4 disper…  NA        NA          0.387 5.34e-1           NA             NA
+#> 1 depth     0.0858    0.0490     1.75   0.0807          -0.0209           0.206 
+#> 2 istip    -0.181     0.297     -0.609  0.543           -0.803            0.358 
+#> 3 core     -0.365     0.226     -1.62   0.106           -0.864            0.0888
+#> 4 disper…  NA        NA          6.14   0.0132          NA               NA
 ```
 
 ## Output
@@ -281,7 +284,7 @@ column is the branch length taken from the phylogeny; the `istip` column
 indicates whether the branch occurs at the tip of the phylogeny and the
 `depth` column indicates the distance from the root node to the branch.
 
-#### ci\_samples
+#### ci_samples
 
 A ‘boot’ object, generated by the
 [boot](https://cran.r-project.org/web/packages/boot/boot.pdf) package.

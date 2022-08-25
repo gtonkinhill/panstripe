@@ -132,14 +132,14 @@ The `panstripe` model allows these two scenarios to be investigated by allowing 
 Here, we simulate two data sets with the same recombination rate but where each recombination event differs in the number of genes involved.
 
 ```{r}
-sim_large <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 3)
-sim_small <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 4)
+sim_large <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 4)
+sim_small <- simulate_pan(rate = 1e-3, ngenomes = 100, mean_trans_size = 3)
 
 fit_large <- panstripe(sim_large$pa, sim_large$tree)
 fit_small <- panstripe(sim_small$pa, sim_small$tree)
 
 # Compare the fits
-result <- compare_pangenomes(fit_fast, fit_slow)
+result <- compare_pangenomes(fit_large, fit_small)
 result$summary
 ```
 
