@@ -50,7 +50,7 @@ Includes covariates to control for the impact of annotation errors and the depth
 }
 \examples{
 
-sim <- simulate_pan(rate=1e-4, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
+sim <- simulate_pan(rate=5e-4, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
 pa <- sim$pa
 tree <- sim$tree
 nboot <- 100

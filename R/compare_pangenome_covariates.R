@@ -57,10 +57,11 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   dat <- cbind(dat, covariates[,2:ncol(covariates),drop=FALSE])
   
   # fit model
-  model <- stats::as.formula(paste(c("acc ~ istip + core + depth + istip:core",
-                                     paste('depth', keep, sep=':'),
+  model <- stats::as.formula(paste(c("acc ~ 0 + istip + core + depth",
+                                     "istip:core",
                                      paste('istip', keep, sep=':'),
                                      paste('core', keep, sep=':'),
+                                     paste('depth', keep, sep=':'),
                                      paste('istip:core', keep, sep=':')), collapse = ' + '))
   
   if(modeldisp){
@@ -80,7 +81,7 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
     tibble::as_tibble(rownames = 'term')
   coef <- s$term
   
-  s <- s[!s$term %in% c('(Intercept)', 'istipTRUE', 'core', 'depth', 'istipTRUE:core'), , drop=FALSE]
+  s <- s[!s$term %in% c('(Intercept)', 'istip', 'core', 'depth', 'istip:core'), , drop=FALSE]
   indices <- which(coef %in% s$term)
   s$term <- gsub("TRUE", "", s$term)
   colnames(s) <- c('term','estimate','std.error','statistic','p.value')

@@ -20,7 +20,7 @@
 #'
 #' @examples
 #'
-#' sim <- simulate_pan(rate=1e-4, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
+#' sim <- simulate_pan(rate=5e-4, mean_trans_size=3, fn_error_rate=2, fp_error_rate=2)
 #' pa <- sim$pa
 #' tree <- sim$tree
 #' nboot <- 100
@@ -240,7 +240,7 @@ fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, fa
     coef <- c(tm$coefficients, tm$p, tm$phi)
   } else {
     tm <- stats::glm(model, data = tdat, family=family)
-    coef <- c(tm$coefficients, NA, NA)
+    coef <- c(tm$coefficients, 0, 0)
   }
 
   return(coef)

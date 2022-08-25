@@ -8,6 +8,7 @@
 #' @param fn_error_rate false negative error rate
 #' @param fp_error_rate false positive error rate
 #' @param mean_trans_size mean size of the number of genes gained or lost per event
+#' @param Q the rate matrix (default=1)
 #'
 #' @return A list comprising of a binary gene presence/absence matrix and a core phylogeny 
 #'
@@ -19,7 +20,7 @@
 #' @export
 simulate_pan <- function(ngenomes=50, rate=1e-5, genome_length=2000, 
                          fn_error_rate=1, fp_error_rate=3, 
-                         mean_trans_size=3){
+                         mean_trans_size=3, Q=1){
   
   # simulate tree
   tree <- ape::rtree(ngenomes)
@@ -27,7 +28,7 @@ simulate_pan <- function(ngenomes=50, rate=1e-5, genome_length=2000,
   #simulate genes
   data <- as.character(phangorn::simSeq(tree, l = genome_length, type="USER", 
                               levels = c(0,1), bf=c(.3,.2), 
-                              Q=1, rate = rate))
+                              Q=Q, rate = rate))
   
   
   is_acc <- which(apply(data, 2, stats::sd)>0)

@@ -47,7 +47,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", modeldisp=TRUE, ci_
   }
   
   # model
-  model <- stats::as.formula("acc ~  istip + core + depth + istip:core + depth:pangenome + istip:pangenome + core:pangenome + istip:core:pangenome")
+  model <- stats::as.formula("acc ~ 0 + istip + core + depth + istip:core + depth:pangenome + istip:pangenome + core:pangenome + istip:core:pangenome")
   if (modeldisp){
     dmodel <- stats::as.formula("acc ~ pangenome")
   } else {

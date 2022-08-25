@@ -42,12 +42,23 @@ plot_pangenome_params <- function(fit,
     fit <- list(fit)
   }
   
+  # Transform coefficients of some models prior to plotting
+  fit <- purrr::map(fit, ~{
+    if (.x$model$family$family %in% c("Tweedie", "quasipoisson", "poisson")){
+      k <- .x$summary$term %in% c('core', 'istip', 'depth')
+      .x$summary$estimate[k] <- exp(.x$summary$estimate[k])
+      .x$summary$`bootstrap CI 2.5%`[k] <- exp(.x$summary$`bootstrap CI 2.5%`[k])
+      .x$summary$`bootstrap CI 97.5%`[k] <- exp(.x$summary$`bootstrap CI 97.5%`[k])
+    }
+    return(.x)
+  })
 
   plot_data <- purrr::imap_dfr(fit, ~{
     .x$summary %>%
       tibble::add_column(pangenome=.y, .before=1)
   }) %>%
     dplyr::filter(.data$term %in% c('core', 'istip', 'depth', 'p', 'phi'))
+  
   
   if (!plot){
     return(plot_data)
