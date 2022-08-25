@@ -6,7 +6,7 @@
 #'
 #' @param pa a binary gene presence/absence matrix with genes as columns and genomes as rows. The rownames should match the tip.labels of the corresponding phylogeny.
 #' @param tree a core gene phylogeny of class \link{phylo}
-#' @param asr_method method used to perform ancestral state reconstruction. Can be either 'max_parsimony' (default) or 'ML' (experimental)
+#' @param asr_method method used to perform ancestral state reconstruction. Can be either 'max.parsimony' (default), 'max.likelihood', or 'stochastic.map'
 #' @param min_depth the minimum depth of a branch to be included in the regression. All branches are included by default.
 #' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
 #' @param ci_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.

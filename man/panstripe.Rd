@@ -23,7 +23,7 @@ panstripe(
 
 \item{tree}{a core gene phylogeny of class \link{phylo}}
 
-\item{asr_method}{method used to perform ancestral state reconstruction. Can be either 'max_parsimony' (default) or 'ML' (experimental)}
+\item{asr_method}{method used to perform ancestral state reconstruction. Can be either 'max.parsimony' (default), 'max.likelihood', or 'stochastic.map'}
 
 \item{min_depth}{the minimum depth of a branch to be included in the regression. All branches are included by default.}
 
