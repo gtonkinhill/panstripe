@@ -25,7 +25,9 @@ Imports:
     boot,
     dglm,
     statmod,
-    tweedie
+    tweedie,
+    glmmTMB,
+    scales
 LinkingTo: Rcpp
 Suggests: 
     knitr,

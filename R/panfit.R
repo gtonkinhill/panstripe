@@ -17,7 +17,7 @@ new_panfit <- function(summary, model, data, boot_samples,
                        tree, pa){
   
   stopifnot(any(class(summary) %in% c('NULL','tbl','data.frame')))
-  stopifnot(any(class(model) %in% c('NULL','glm')))
+  stopifnot(any(class(model) %in% c('NULL','glm','glmmTMB')))
   stopifnot(any(class(data) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(boot_samples) %in% c('NULL','boot')))
   stopifnot(any(class(tree) %in% c('NULL','phylo')))
@@ -59,9 +59,9 @@ validate_panfit <- function(x) {
   # check summary
   if(!any(class(x$summary) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `summary`", call. = FALSE)
   if (!is.null(x$summary)){
-    if(ncol(x$summary)!=7) {
+    if(!ncol(x$summary) %in% c(7,8)) {
       stop(
-        "There must be 7 columns in `summary` data.frame",
+        "There must be 7 or 8 columns in `summary` data.frame",
         call. = FALSE
       )
     }
@@ -76,7 +76,7 @@ validate_panfit <- function(x) {
   }
   
   # check model
-  if(!any(class(x$model) %in% c('NULL','glm'))) stop("Invalid class for `model`", call. = FALSE)
+  if(!any(class(x$model) %in% c('NULL','glm','glmmTMB'))) stop("Invalid class for `model`", call. = FALSE)
   
   # check data
   if(!any(class(x$data) %in% c('NULL','tbl','data.frame'))) stop("Invalid class for `data`", call. = FALSE)
@@ -99,3 +99,4 @@ validate_panfit <- function(x) {
   if(!class(x$boot_samples) %in% c('NULL','boot')) stop("Invalid class for `boot_samples`", call. = FALSE)
   
 }
+

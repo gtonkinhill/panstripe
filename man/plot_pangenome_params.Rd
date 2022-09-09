@@ -16,7 +16,7 @@ plot_pangenome_params(
 \arguments{
 \item{fit}{the result of running the `panstripe` function. Multiple fits can be passed as a named list.}
 
-\item{boot_ci}{whether to use the estimated Bootstrap confidence intervals}
+\item{boot_ci}{whether to use the estimated Bootstrap confidence intervals for the 'core' and 'tip' parameters (default=TRUE)}
 
 \item{plot}{whether to generate the plot (default) or return a data.frame}
 

@@ -21,7 +21,7 @@
 #' fA <- panstripe(sim$pa, sim$tree, nboot=0)
 #' plot_pangenome_cumulative(fA, color_pallete=6)
 #' sim <- simulate_pan(rate=1e-3)
-#' fB <-panstripe(sim$pa, sim$tree, nboot=0)
+#' fB <- panstripe(sim$pa, sim$tree, nboot=0)
 #' fit <- fB
 #' plot=TRUE
 #' legend=TRUE

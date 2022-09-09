@@ -9,7 +9,9 @@
 #' @param asr_method method used to perform ancestral state reconstruction. Can be either 'max.parsimony' (default), 'max.likelihood', or 'stochastic.map'
 #' @param min_depth the minimum depth of a branch to be included in the regression. All branches are included by default.
 #' @param family the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')
-#' @param ci_type the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.
+#' @param intercept whether or not to include an intercept term in the GLM (default=FALSE). Adding an intercept can increase the robustness of the algorithm to errors at higher branches of the phylogeny at the expense of less sensitivity. 
+#' @param fit_method the method used to fit the GLM. Can be either 'glm' (default) which uses base R and the 'tweedie' package or 'glmmTMB' which uses Template Model Builder.
+#' @param ci_type the method used to calculate the bootstrap CI (default='perc'). See \link[boot]{boot.ci} for more details.
 #' @param nboot the number of bootstrap replicates to perform (default=100)
 #' @param boot_type whether to resample by 'branch', the default, or by 'gene'
 #' @param conf A scalar indicating the confidence level of the required intervals (default=0.95).
@@ -28,15 +30,20 @@
 #' ci_type='perc'
 #' boot_type='branch'
 #' conf=0.95
-#' res <- panstripe(sim$pa, sim$tree, nboot=100, family='Tweedie')
+#' asr_method="stochastic.map"
+#' res <- panstripe(sim$pa, sim$tree, nboot=100)
+#' res$summary
+#' res <- panstripe(sim$pa, sim$tree, nboot=100, fit_method='glmmTMB', family='gaussian')
 #' res$summary
 #'
 #' @export
 panstripe <- function(pa, tree, 
                       asr_method="max.parsimony", 
                       min_depth=NULL,
-                      family='Tweedie', 
-                      ci_type='norm',
+                      family='Tweedie',
+                      intercept=FALSE,
+                      fit_method='glm',
+                      ci_type='perc',
                       nboot=1000,
                       boot_type='branch',
                       conf=0.95,
@@ -70,17 +77,17 @@ panstripe <- function(pa, tree,
       return(1*(mx[tree$edge[,2]]!=mx[tree$edge[,1]]))
     }))
   } else if (asr_method=='stochastic.map') {
-    sf <- sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
+    sf <- panstripe:::sfreemap(tree, pa = pa[,index], model = "ER", quiet=quiet)
     anc_states <- exp(sf$mapped.edge.lmt)
   } else {
     # use maximum parsimony
     anc_states <- do.call(cbind, purrr::map(index, ~{
-      return(asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change[tree$edge[,2]])
+      return(panstripe:::asr_max_parsimony(tree, pa[,.x]+1, Nstates = 2)$change[tree$edge[,2]])
     }))
   }
   
   dat <- tibble::tibble(
-    acc=rowSums(anc_states),
+    acc=rowSums(anc_states, na.rm = TRUE),
     core=tree$edge.length,
     istip=as.numeric(tree$edge[,2]<=length(tree$tip.label) )
   )
@@ -99,20 +106,36 @@ panstripe <- function(pa, tree,
     warning("No gene gains/losses identified at phylogeny tips! Separation may be a problem.")
   }
   
-  # fit model
-  model <- stats::as.formula("acc ~ 0 + istip + core + depth + istip:core")
+  # set model
+  if (intercept){
+    model <- stats::as.formula("acc ~ istip + core + depth + istip:core")
+  } else {
+    model <- stats::as.formula("acc ~ 0 + istip + core + depth + istip:core")  
+  }
   
   # fit model
   if (is.character(family) && (family=="Tweedie")){
-    m <- fit_tweedie(model, data = dat)
+    m <- fit_tweedie(model, data = dat, method=fit_method)
     coef <- c(m$coefficients, m$p, m$phi)
   } else {
-    m <- stats::glm(model, data = dat, family=family)
+    if (fit_method=='glm'){
+      m <- stats::glm(model, data = dat, family=family)
+    } else {
+      m <- glmmTMB::glmmTMB(model, data = dat, family=family)
+      m$coefficients <- m$fit$par[names(m$fit$par)=='beta']
+    }
     coef <- c(m$coefficients, NA, NA)
   }
   
   sm <- summary(m)
-  coef_names <- strsplit(as.character(model), ' \\+ ')[[3]][-1]
+  if (any(grepl('glmmTMB', m$call))) sm$coefficients <- sm$coefficients$cond
+  
+  if (intercept){
+    coef_names <- c('intercept', strsplit(as.character(model), ' \\+ ')[[3]])
+  } else {
+    coef_names <- strsplit(as.character(model), ' \\+ ')[[3]][-1]  
+  }
+  
   s <- tibble::tibble(
     term = c(coef_names, 'p', 'phi'),
     estimate = coef,
@@ -127,12 +150,12 @@ panstripe <- function(pa, tree,
       boot_reps <- boot::boot(t(anc_states), fit_model,
                               R = nboot,
                               stype='i',
-                              tree=tree, min_depth=min_depth, model=model, family=family, boot_type='gene')
+                              tree=tree, min_depth=min_depth, model=model, family=family, fit_method=fit_method, boot_type='gene')
     } else {
       boot_reps <- boot::boot(dat, fit_model,
                               R = nboot,
                               stype='i',
-                              tree=tree, min_depth=min_depth, model=model, family=family, boot_type='branch')
+                              tree=tree, min_depth=min_depth, model=model, family=family, fit_method=fit_method, boot_type='branch')
     }
     
     # calculate CIs and p-values
@@ -141,7 +164,7 @@ panstripe <- function(pa, tree,
     ci <- do.call(rbind, purrr::map(1:mindex, ~{
       transformation <- 'identity'
       if (s$term[[.x]]=='p') transformation <- 'logit'
-      if (s$term[[.x]]=='phi') transformation <- 'inverse'
+      if (s$term[[.x]]=='phi') transformation <- 'log'
       
       boot_ci_pval(boot_reps, index=.x, type=ci_type,
                    theta_null=0, ci_conf=conf,
@@ -190,59 +213,87 @@ twd_llk <- function(p, model, data) {
   -sum(log(tweedie::dtweedie(y = tm$y, mu = tm$fitted.values, phi = tsm$dispersion, power = p)))
 }
 
-fit_tweedie <- function(model, data){
-  fm <- tryCatch(
-    {
-      op <- stats::optimise(twd_llk, lower = 1, upper = 2, model=model, data=data)
-      tm <- stats::glm(model, data, family = statmod::tweedie(var.power = op$minimum, link.power = 0))
-      stm <- summary(tm)
-      tm$p <- op$minimum
-      tm$phi <- stm$dispersion
-      return(tm)
-    },
-    error=function(cond) {
-      stop(
+fit_tweedie <- function(model, data, method='glm'){
+  
+  if (method=='glm'){
+    fm <- tryCatch(
+      {
+        op <- stats::optimise(twd_llk, lower = 1, upper = 2, model=model, data=data)
+        tm <- stats::glm(model, data, family = statmod::tweedie(var.power = op$minimum, link.power = 0))
+        stm <- summary(tm)
+        tm$p <- op$minimum
+        tm$phi <- stm$dispersion
+        tm
+      },
+      error=function(cond) {
+        stop(
 "Panstripe model fit failed! This can sometime be caused by unusual branch lengths.
-Setting family='quasipoisson' or 'gaussian' often provides a more stable fit to difficult datasets"
-          )
-    }
-  )
-  if (!fm$converged) {
-    warning(
-"Panstripe model fit failed to converge!
-Setting family='gaussian' often provides a more stable fit to difficult datasets"
+Setting fit_method='glmmTMB' or family='quasipoisson' or 'gaussian' often provides a more stable fit to difficult datasets"
+        )
+      }
     )
-  }
-  return(fm)
-}
-
-fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, family, boot_type){
-  stopifnot(length(indices)==nrow(d))
-  stopifnot(boot_type %in% c('branch', 'gene'))
-
-  if (boot_type == 'branch') {
-    tdat <- d[indices,]
   } else {
-    tdat <- tibble::tibble(
-      acc=colSums(d[indices,]),
-      core=tree$edge.length,
-      istip=tree$edge[,2]<=length(tree$tip.label) 
-    )
-    # add depth
-    tdat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,2]]
-    if (!is.null(min_depth)){
-      tdat <- tdat[tdat$min_depth>=min_depth,] 
+    fm <- glmmTMB::glmmTMB(model, data = data, family = glmmTMB::tweedie)
+    fm$coefficients <- fm$fit$par[1:(length(fm$fit$par)-2)]
+    fm$p <- min(1.99, max(1.01, exp(1+fm$fit$par[[length(fm$fit$par)]])))
+    fm$phi <- exp(fm$fit$par[[length(fm$fit$par)-1]])
+    
+    if (fm$fit$convergence!=0){
+      warning(
+"Panstripe model fit failed to converge!
+Setting family='quasipoisson' or 'gaussian' often provides a more stable fit to difficult datasets"
+      )
     }
   }
   
-  if (is.character(family) && (family=="Tweedie")){
-    tm <- fit_tweedie(model, data = tdat)
-    coef <- c(tm$coefficients, tm$p, tm$phi)
-  } else {
-    tm <- stats::glm(model, data = tdat, family=family)
-    coef <- c(tm$coefficients, 0, 0)
-  }
+  return(fm)
+}
 
+fit_model <- function(d, indices=1:nrow(d), tree=NULL, min_depth=NULL, model, family, fit_method, boot_type){
+  stopifnot(length(indices)==nrow(d))
+  stopifnot(boot_type %in% c('branch', 'gene'))
+  
+  # sometimes it is hard to get the  model to converge for a particular sample. We attempt a few which hopefully does not bias things too much.
+  coef <- NULL
+  attempt <- 0
+  max_attempt <- 5
+  
+  while(is.null(coef) && (attempt<=max_attempt)){
+    attempt <- attempt + 1
+    try({
+      if (boot_type == 'branch') {
+        tdat <- d[indices,]
+      } else {
+        tdat <- tibble::tibble(
+          acc=colSums(d[indices,]),
+          core=tree$edge.length,
+          istip=tree$edge[,2]<=length(tree$tip.label) 
+        )
+        # add depth
+        tdat$depth <- ape::node.depth.edgelength(tree)[tree$edge[,2]]
+        if (!is.null(min_depth)){
+          tdat <- tdat[tdat$min_depth>=min_depth,] 
+        }
+      }
+      
+      if (is.character(family) && (family=="Tweedie")){
+        tm <- fit_tweedie(model, data = tdat, method=fit_method)
+        coef <- c(tm$coefficients, tm$p, tm$phi)
+      } else {
+        if (fit_method=='glm'){
+          tm <- stats::glm(model, data = tdat, family=family)
+        } else {
+          tm <- glmmTMB::glmmTMB(model, data = tdat, family=family)
+          tm$coefficients <- tm$fit$par[names(tm$fit$par)=='beta']
+        }
+        coef <- c(tm$coefficients, NA, NA)
+      }
+    })
+  }
+  
+  if (is.null(coef) && (attempt==max_attempt+1)){
+    stop('Model fitting failed to converge in bootstrap replicate!')
+  }
   return(coef)
 }
 
@@ -253,25 +304,26 @@ boot_ci_pval <- function(boot_res, index, type,
                          transformation='identity',
                          calc_pval=FALSE) {
   
-  if (!transformation %in% c('identity','logit','inverse')) stop('Invalid transformation!')
+  if (!transformation %in% c('identity','logit','log')) stop('Invalid transformation!')
+  
+  if (is.null(precision)){
+    precision = 1/boot_res$R  
+  }
   
   if (transformation=='logit'){
     ll <- stats::make.link('logit')
     h <- function(x) ll$linkfun(x-1)
     hinv <- function(x) ll$linkinv(x)+1
     hdot <- function(x) ll$mu.eta(x)
-  } else if (transformation=='inverse'){
-    h <- function(x) 1/x
-    hinv <- function(x) 1/x
-    hdot <- function(x) -1/x^2
+  } else if (transformation=='log'){
+    ll <- stats::make.link('log')
+    h <- function(x) ll$linkfun(x)
+    hinv <- function(x) ll$linkinv(x)
+    hdot <- function(x) ll$mu.eta(x)
   } else {
     h <- function(x) x
     hinv <- function(x) x
     hdot <- function(x) 1
-  }
-  
-  if (is.null(precision)){
-    precision = 1/boot_res$R  
   }
   
   if (calc_pval){

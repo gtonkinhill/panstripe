@@ -46,6 +46,7 @@ Panstripe takes as input a phylogeny and gene presence/absence matrix in Rtab fo
 ```{r, warning=FALSE, message=FALSE}
 library(panstripe)
 library(ape)
+library(patchwork)
 set.seed(1234)
 
 ###
@@ -63,7 +64,9 @@ fit <- panstripe(pa, tree)
 fit$summary
 
 # Plot results
-plot_pangenome_fits(fit, include_data=TRUE)
+plot_pangenome_params(fit)
+
+plot_pangenome_cumulative(fit)
 ```
 
 A significant p-value for the `tip` term indicates that there is a different rate of gene exchange at the tips of the phylogeny compared with the internal branches. This is usually driven by annotation errors or highly mobile elements that do not persist long enough to be observed in multiple genomes.
@@ -74,7 +77,7 @@ The `depth` term is less interesting but indicates when there is a difference in
 
 ## Citation
 
-To cite panstripe please use:
+To cite panstripe please use: Tonkin-Hill, G. et al. Robust analysis of prokaryotic pangenome gene gain and loss rates with Panstripe. bioRxiv (2022) doi:10.1101/2022.04.23.489244
 
 ## Comparing Pangenomes
 
@@ -105,6 +108,14 @@ A significant p-value for the `core` term indicates that two data sets have diff
 The `depth` term is less interesting but indicates when there is a difference in our ability to detect older gene exchange events between the two pangenomes.
 
 The `dispersion` parameter indicates if there is a significant difference in the dispersion of the two pangenomes. This suggests that the relationship between the rate of gene exchange and the size of each event differs in the two pangenomes. Here, the p-value is obtained using a Likelihood Ratio Test.
+
+```{r}
+## Plot the results
+
+plot_pangenome_params(list(fast=fit_fast, slow=fit_slow), legend = FALSE)  + 
+  plot_pangenome_cumulative(list(fast=fit_fast, slow=fit_slow)) + 
+  plot_layout(nrow = 1)
+```
 
 ## Open vs Closed
 
@@ -195,40 +206,38 @@ Panstripe includes a number of useful plotting functions to help with interpreta
 
 ### Pangenome fit
 
-A simple plot of the fit of the model along with the input data points can be made by running
+The inferred parameters of the Panstripe model fit can be plotted as
 
 ```{r}
-plot_pangenome_fits(fit_fast)
+plot_pangenome_params(fit_fast)
 ```
 
-By default this will plot just the model fit. It is also possible to include the data points of the branches located at the tips of the phylogeny. 
+We also suggest plotting the cumulative number of gene gain and loss events against the core branch length. As Panstripe models each branch individually and accounts for the depth of the branch it is not possible to add the Panstripe model fit to this plot.
 
 ```{r}
-plot_pangenome_fits(fit_fast, include_data = TRUE)
+plot_pangenome_cumulative(fit_fast)
 ```
 
-The function can also take a named list as input allowing for easy comparisons between data sets. Optionally the plot can be trimmed to cover the same range when considering multiple pangenome curves.
+These two plots can easily be combined using the patchwork R package as
 
 ```{r}
-plot_pangenome_fits(list(fast=fit_fast, slow=fit_slow), trim=TRUE)
+plot_pangenome_params(fit_fast)  + 
+  plot_pangenome_cumulative(fit_fast) + 
+  plot_layout(nrow = 1)
 ```
 
-The parameters and accompanying error bars can be plotted as
+The functions can also take a named list as input allowing for easy comparisons between data sets. 
 
 ```{r}
-plot_pangenome_params(list(fast=fit_fast, slow=fit_slow))
+plot_pangenome_params(list(fast=fit_fast, slow=fit_slow), legend = FALSE)  + 
+  plot_pangenome_cumulative(list(fast=fit_fast, slow=fit_slow)) + 
+  plot_layout(nrow = 1)
 ```
 
 A plot of the residuals of the regression can also be generated using
 
 ```{r}
 plot_residuals(fit_fast)
-```
-
-It is also possible to generate a cumulative plot of the branch lengths versus the number of gene gain and loss events at each node of the input phylogeny. As Panstripe models each branch individually and accounts for the depth of the branch it is not possible to add the Panstripe model fit to this plot.
-
-```{r}
-plot_pangenome_cumulative(list(fast=fit_fast, slow=fit_slow))
 ```
 
 ### Tree with presence/absence

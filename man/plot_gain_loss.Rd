@@ -4,10 +4,12 @@
 \alias{plot_gain_loss}
 \title{plot_gain_loss}
 \usage{
-plot_gain_loss(fit, text_size = 14, color_pallete = 7)
+plot_gain_loss(fit, tip_label = TRUE, text_size = 14, color_pallete = 7)
 }
 \arguments{
 \item{fit}{a fitted pangenome model output by running 'panstripe'}
+
+\item{tip_label}{whether or not to show tree tip labels (default=TRUE)}
 
 \item{text_size}{adjusts the size of text in the plot}
 

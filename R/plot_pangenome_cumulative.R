@@ -53,7 +53,8 @@ plot_pangenome_cumulative <- function(fit,
       pangenome=.y,
       acc = ape::node.depth.edgelength(temp_tree),
       core = ape::node.depth.edgelength(.x$tree),
-      tip = c(1:(.x$tree$Nnode + length(.x$tree$tip.label)))<length(.x$tree$tip.label)
+      branch = ifelse(c(1:(.x$tree$Nnode + length(.x$tree$tip.label)))<length(.x$tree$tip.label), 
+                   'terminal', 'internal')
     ))
   })
   
@@ -64,31 +65,33 @@ plot_pangenome_cumulative <- function(fit,
   
   if (length(fit)>1) {
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc, colour=.data$pangenome)) + 
-      ggplot2::geom_point(ggplot2::aes(shape=.data$tip))
+      ggplot2::geom_point(ggplot2::aes(shape=.data$branch))
     if (facet){
       gg <- gg + ggplot2::facet_wrap(~pangenome, ncol = 1)
     }
   } else {
     gg <- ggplot2::ggplot(plot_data, ggplot2::aes(x=.data$core, y=.data$acc))+ 
-      ggplot2::geom_point(ggplot2::aes(shape=.data$tip))
+      ggplot2::geom_point(ggplot2::aes(shape=.data$branch))
   }
   
   if (smooth){
     warning("Adding trend line using 'ggplot2::geom_smooth'. This is not the panstripe fit!")
-    # op <- stats::optimise(twd_llk, lower = 1, upper = 2, 
-    #                       model=stats::as.formula("acc ~ core"), 
-    #                       data=plot_data)
     gg <- gg + ggplot2::geom_smooth(method ='glm',
                                     method.args = list(family = 'quasipoisson'), 
                                     level = 0.95)
+  }
+  
+  if (!legend){
+    gg <- gg + ggplot2::theme(legend.position = 'none')
   }
   
   gg <- gg + 
     ggplot2::scale_colour_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::scale_fill_brewer(type = 'qual', palette = color_pallete) +
     ggplot2::theme_bw(base_size = text_size) +
-    ggplot2::xlab('core phylogentic branch distance') + 
-    ggplot2::ylab('accessory distance')
+    ggplot2::xlab('cumulative core branch distance') + 
+    ggplot2::ylab('cumulative gene gain & loss events') 
+    
   
   gg
   

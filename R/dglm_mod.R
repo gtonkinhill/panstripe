@@ -330,5 +330,5 @@ anova.dglm.basic <- function(object, tweedie.power){
   Chisq <- reduced$m2loglik - object$m2loglik
   return(tibble::tibble(
     Chisq = Chisq,
-    p.value = 1 - stats::pchisq(Chisq, 1)))
+    p.value = stats::pchisq(Chisq, 1, lower.tail = FALSE)))
 }

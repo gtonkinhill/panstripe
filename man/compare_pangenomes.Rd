@@ -8,8 +8,9 @@ compare_pangenomes(
   fitA,
   fitB,
   family = "Tweedie",
+  intercept = FALSE,
   modeldisp = TRUE,
-  ci_type = "norm",
+  ci_type = "perc",
   conf = 0.95,
   nboot = 100,
   boot_pvalue = FALSE
@@ -22,9 +23,11 @@ compare_pangenomes(
 
 \item{family}{the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')}
 
+\item{intercept}{whether or not to include an intercept term in the GLM (default=FALSE). Adding an intercept can increase the robustness of the algorithm to errors at higher branches of the phylogeny at the expense of less sensitivity.}
+
 \item{modeldisp}{whether or not to model the dispersion as a function of the covariates of interest if using a Tweedie family (default=TRUE)}
 
-\item{ci_type}{the method used to calculate the bootstrap CI (default='norm'). See \link[boot]{boot.ci} for more details.}
+\item{ci_type}{the method used to calculate the bootstrap CI (default='perc'). See \link[boot]{boot.ci} for more details.}
 
 \item{conf}{A scalar indicating the confidence level of the required intervals (default=0.95)}
 

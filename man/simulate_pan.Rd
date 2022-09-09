@@ -11,7 +11,8 @@ simulate_pan(
   fn_error_rate = 1,
   fp_error_rate = 3,
   mean_trans_size = 3,
-  Q = 1
+  Q = 1,
+  bf = c(0.3, 0.2)
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ simulate_pan(
 \item{mean_trans_size}{mean size of the number of genes gained or lost per event}
 
 \item{Q}{the rate matrix (default=1)}
+
+\item{bf}{the base frequencies (default=c(0.3,0.2))}
 }
 \value{
 A list comprising of a binary gene presence/absence matrix and a core phylogeny

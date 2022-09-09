@@ -10,7 +10,9 @@ panstripe(
   asr_method = "max.parsimony",
   min_depth = NULL,
   family = "Tweedie",
-  ci_type = "norm",
+  intercept = FALSE,
+  fit_method = "glm",
+  ci_type = "perc",
   nboot = 1000,
   boot_type = "branch",
   conf = 0.95,
@@ -29,7 +31,11 @@ panstripe(
 
 \item{family}{the family used by glm. One of 'Tweedie', 'Poisson', 'Gamma' or 'Gaussian'. (default='Tweedie')}
 
-\item{ci_type}{the method used to calculate the bootstrap CI (default='bca'). See \link[boot]{boot.ci} for more details.}
+\item{intercept}{whether or not to include an intercept term in the GLM (default=FALSE). Adding an intercept can increase the robustness of the algorithm to errors at higher branches of the phylogeny at the expense of less sensitivity.}
+
+\item{fit_method}{the method used to fit the GLM. Can be either 'glm' (default) which uses base R and the 'tweedie' package or 'glmmTMB' which uses Template Model Builder.}
+
+\item{ci_type}{the method used to calculate the bootstrap CI (default='perc'). See \link[boot]{boot.ci} for more details.}
 
 \item{nboot}{the number of bootstrap replicates to perform (default=100)}
 
@@ -58,7 +64,10 @@ family <- 'Tweedie'
 ci_type='perc'
 boot_type='branch'
 conf=0.95
-res <- panstripe(sim$pa, sim$tree, nboot=100, family='Tweedie')
+asr_method="stochastic.map"
+res <- panstripe(sim$pa, sim$tree, nboot=100)
+res$summary
+res <- panstripe(sim$pa, sim$tree, nboot=100, fit_method='glmmTMB', family='gaussian')
 res$summary
 
 }

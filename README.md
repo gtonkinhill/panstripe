@@ -67,6 +67,7 @@ pangenome tools.
 ``` r
 library(panstripe)
 library(ape)
+library(patchwork)
 set.seed(1234)
 
 ### NOTE: here we load example files from the panstripe package. You should
@@ -85,18 +86,25 @@ fit$summary
 #> # A tibble: 6 × 7
 #>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
-#> 1 istip   1.49      0.282      5.29   8.03e- 7           0.987             1.98 
-#> 2 core    2.97      0.247     12.0    9.69e-21           2.43              3.43 
-#> 3 depth   0.0572    0.0619     0.923  3.58e- 1          -0.0605            0.185
-#> 4 isti…  -1.93      0.431     -4.48   2.10e- 5          -2.71             -1.06 
-#> 5 p       1.25     NA         NA     NA                  1.14              1.44 
-#> 6 phi     2.58     NA         NA     NA                  2.06              3.82
+#> 1 istip   1.49      0.282      5.29   8.03e- 7           0.978             1.99 
+#> 2 core    2.97      0.247     12.0    9.69e-21           2.54              3.54 
+#> 3 depth   0.0572    0.0619     0.923  3.58e- 1          -0.0859            0.162
+#> 4 isti…  -1.93      0.431     -4.48   2.10e- 5          -2.82             -1.18 
+#> 5 p       1.25     NA         NA     NA                  1.11              1.36 
+#> 6 phi     2.58     NA         NA     NA                  1.92              3.28
 
 # Plot results
-plot_pangenome_fits(fit, include_data = TRUE)
+plot_pangenome_params(fit)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
+
+plot_pangenome_cumulative(fit)
+```
+
+![](inst/vignette-supp/unnamed-chunk-4-2.png)<!-- -->
 
 A significant p-value for the `tip` term indicates that there is a
 different rate of gene exchange at the tips of the phylogeny compared
@@ -113,7 +121,9 @@ difference in our ability to detect older gene exchange events.
 
 ## Citation
 
-To cite panstripe please use:
+To cite panstripe please use: Tonkin-Hill, G. et al. Robust analysis of
+prokaryotic pangenome gene gain and loss rates with Panstripe. bioRxiv
+(2022) <doi:10.1101/2022.04.23.489244>
 
 ## Comparing Pangenomes
 
@@ -146,10 +156,10 @@ result$summary
 #> # A tibble: 4 × 7
 #>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.0578    0.0268    -2.16  3.14e-2          -0.0990         -0.00988
-#> 2 istip    -0.0464    0.173     -0.268 7.88e-1          -0.346           0.199  
-#> 3 core     -0.683     0.165     -4.15  3.74e-5          -1.00           -0.380  
-#> 4 disper…  NA        NA          0.439 5.08e-1          NA              NA
+#> 1 depth    -0.0578    0.0268    -2.16  3.14e-2           -0.108          -0.0148
+#> 2 istip    -0.0464    0.173     -0.268 7.88e-1           -0.266           0.323 
+#> 3 core     -0.683     0.165     -4.15  3.74e-5           -0.972          -0.345 
+#> 4 disper…  NA        NA          0.439 5.08e-1           NA              NA
 ```
 
 A significant p-value for the `tip` term indicates that the two
@@ -171,6 +181,15 @@ difference in the dispersion of the two pangenomes. This suggests that
 the relationship between the rate of gene exchange and the size of each
 event differs in the two pangenomes. Here, the p-value is obtained using
 a Likelihood Ratio Test.
+
+``` r
+## Plot the results
+
+plot_pangenome_params(list(fast = fit_fast, slow = fit_slow), legend = FALSE) + plot_pangenome_cumulative(list(fast = fit_fast,
+    slow = fit_slow)) + plot_layout(nrow = 1)
+```
+
+![](inst/vignette-supp/unnamed-chunk-6-1.png)<!-- -->
 
 ## Open vs Closed
 
@@ -195,12 +214,12 @@ fit_closed$summary
 #> # A tibble: 6 × 7
 #>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
-#> 1 istip  1.53e+0   1.43e-1   10.7     3.09e-21            1.14            1.93  
-#> 2 core  -7.23e+2   3.80e+4   -0.0190  9.85e- 1         -884.           -613.    
-#> 3 depth -4.52e-2   3.74e-2   -1.21    2.29e- 1           -0.149           0.0563
-#> 4 isti…  7.23e+2   3.80e+4    0.0190  9.85e- 1          613.            884.    
-#> 5 p      1.05e+0  NA         NA      NA                   1.00            1.60  
-#> 6 phi    3.99e-1  NA         NA      NA                   0.272           1.03
+#> 1 istip  1.53e+0   1.43e-1   10.7     3.09e-21            1.13            1.90  
+#> 2 core  -7.23e+2   3.80e+4   -0.0190  9.85e- 1         -783.           -492.    
+#> 3 depth -4.52e-2   3.74e-2   -1.21    2.29e- 1           -0.145           0.0549
+#> 4 isti…  7.23e+2   3.80e+4    0.0190  9.85e- 1          493.            784.    
+#> 5 p      1.05e+0  NA         NA      NA                   1.00            1.44  
+#> 6 phi    3.99e-1  NA         NA      NA                   0.199           0.525
 ```
 
 The p-value indicates that there is not a significant association
@@ -235,10 +254,10 @@ result$summary
 #> # A tibble: 4 × 7
 #>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
 #>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth     0.0858    0.0490     1.75   0.0807          -0.0209           0.206 
-#> 2 istip    -0.181     0.297     -0.609  0.543           -0.803            0.358 
-#> 3 core     -0.365     0.226     -1.62   0.106           -0.864            0.0888
-#> 4 disper…  NA        NA          6.14   0.0132          NA               NA
+#> 1 depth     0.0858    0.0490     1.75   0.0807          -0.0169            0.201
+#> 2 istip    -0.181     0.297     -0.609  0.543           -0.739             0.394
+#> 3 core     -0.365     0.226     -1.62   0.106           -0.889             0.121
+#> 4 disper…  NA        NA          6.14   0.0132          NA                NA
 ```
 
 ## Output
@@ -325,59 +344,47 @@ interpretation of the output of
 
 ### Pangenome fit
 
-A simple plot of the fit of the model along with the input data points
-can be made by running
+The inferred parameters of the Panstripe model fit can be plotted as
 
 ``` r
-plot_pangenome_fits(fit_fast)
-```
-
-![](inst/vignette-supp/unnamed-chunk-9-1.png)<!-- -->
-
-By default this will plot just the model fit. It is also possible to
-include the data points of the branches located at the tips of the
-phylogeny.
-
-``` r
-plot_pangenome_fits(fit_fast, include_data = TRUE)
+plot_pangenome_params(fit_fast)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-10-1.png)<!-- -->
 
-The function can also take a named list as input allowing for easy
-comparisons between data sets. Optionally the plot can be trimmed to
-cover the same range when considering multiple pangenome curves.
+We also suggest plotting the cumulative number of gene gain and loss
+events against the core branch length. As Panstripe models each branch
+individually and accounts for the depth of the branch it is not possible
+to add the Panstripe model fit to this plot.
 
 ``` r
-plot_pangenome_fits(list(fast = fit_fast, slow = fit_slow), trim = TRUE)
+plot_pangenome_cumulative(fit_fast)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-11-1.png)<!-- -->
 
-The parameters and accompanying error bars can be plotted as
+These two plots can easily be combined using the patchwork R package as
 
 ``` r
-plot_pangenome_params(list(fast = fit_fast, slow = fit_slow))
+plot_pangenome_params(fit_fast) + plot_pangenome_cumulative(fit_fast) + plot_layout(nrow = 1)
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-12-1.png)<!-- -->
+
+The functions can also take a named list as input allowing for easy
+comparisons between data sets.
+
+``` r
+plot_pangenome_params(list(fast = fit_fast, slow = fit_slow), legend = FALSE) + plot_pangenome_cumulative(list(fast = fit_fast,
+    slow = fit_slow)) + plot_layout(nrow = 1)
+```
+
+![](inst/vignette-supp/unnamed-chunk-13-1.png)<!-- -->
 
 A plot of the residuals of the regression can also be generated using
 
 ``` r
 plot_residuals(fit_fast)
-```
-
-![](inst/vignette-supp/unnamed-chunk-13-1.png)<!-- -->
-
-It is also possible to generate a cumulative plot of the branch lengths
-versus the number of gene gain and loss events at each node of the input
-phylogeny. As Panstripe models each branch individually and accounts for
-the depth of the branch it is not possible to add the Panstripe model
-fit to this plot.
-
-``` r
-plot_pangenome_cumulative(list(fast = fit_fast, slow = fit_slow))
 ```
 
 ![](inst/vignette-supp/unnamed-chunk-14-1.png)<!-- -->
