@@ -21,7 +21,10 @@
 plot_tsne <- function(pa, category=NULL, plot=TRUE, perplexity=20, pcadims=50){
   
   pcadims <- min(pcadims, nrow(pa))
-  perplexity <- min(perplexity, nrow(pa))
+  if (floor((nrow(pa) - 1) / 3) < perplexity) {
+    perplexity <- floor((nrow(pa) - 1) / 3)
+    message(paste("Small number of samples, reducing perplexity to", perplexity))
+  }
   
   pca <- stats::prcomp(pa)
   
