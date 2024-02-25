@@ -6,7 +6,7 @@
 #'
 #' @param pa binary presence/absence matrix
 #' @param category a factor vector which can be used to colour the points
-#' @param plot whether to return the plot or just the data.frame used for plotting (default=FALSE)
+#' @param plot whether to return the plot or just the data.frame used for plotting (default=TRUE)
 #' @param perplexity the `perplexity` argument passed to tSNE
 #' @param pcadims the number of principle components passed from the inital stage used in the main tSNE algorithm
 #'
@@ -26,9 +26,9 @@ plot_tsne <- function(pa, category=NULL, plot=TRUE, perplexity=20, pcadims=50){
   pca <- stats::prcomp(pa)
   
   result <- Rtsne::Rtsne(X = pca$x[,1:pcadims], 
-                  check_duplicates=FALSE,
-                  pca = FALSE,
-                  perplexity = 10)
+                         check_duplicates=FALSE,
+                         pca = FALSE,
+                         perplexity = perplexity)
   
   if (is.null(category)){
     stopifnot(all(names(category)==rownames(pa)))
