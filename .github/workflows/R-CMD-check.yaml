@@ -69,11 +69,12 @@ jobs:
 
       - name: Install dependencies
         run: |
+          remotes::install_cran("BiocManager")
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("rcmdcheck")
           remotes::install_cran("formatR")
           remotes::install_cran("rmarkdown")
-          remotes::install_bioc("ggtree")
+          BiocManager::install("ggtree")
         shell: Rscript {0}
 
       - name: Check
