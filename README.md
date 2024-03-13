@@ -437,7 +437,7 @@ investigate clustering within the pangenome.
 plot_umap(pa)
 ```
 
-![](inst/vignette-supp/unnamed-chunk-18-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-20-1.png)<!-- -->
 
 The [Mandrake](https://github.com/johnlees/mandrake) method can also be
 used as an alternative to tSNE and UMAP.
