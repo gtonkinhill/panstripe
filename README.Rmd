@@ -267,7 +267,15 @@ The tSNE dimension reduction technique can be used to investigate evidence for c
 plot_tsne(pa)
 ```
 
-The [Mandrake](https://github.com/johnlees/mandrake) method can also be used as an alternative to tSNE.
+### UMAP
+
+The UMAP dimension reduction technique is supported as well to investigate clustering within the pangenome.
+
+```{r}
+plot_umap(pa)
+```
+
+The [Mandrake](https://github.com/johnlees/mandrake) method can also be used as an alternative to tSNE and UMAP.
 
 ### Accumulation curves
 
