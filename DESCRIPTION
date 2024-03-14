@@ -27,7 +27,8 @@ Imports:
     statmod,
     tweedie,
     glmmTMB,
-    scales
+    scales,
+    umap
 LinkingTo: Rcpp
 Suggests: 
     knitr,

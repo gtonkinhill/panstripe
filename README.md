@@ -428,8 +428,19 @@ plot_tsne(pa)
 
 ![](inst/vignette-supp/unnamed-chunk-17-1.png)<!-- -->
 
+### UMAP
+
+The UMAP dimension reduction technique is supported as well to 
+investigate clustering within the pangenome.
+
+``` r
+plot_umap(pa)
+```
+
+![](inst/vignette-supp/unnamed-chunk-20-1.png)<!-- -->
+
 The [Mandrake](https://github.com/johnlees/mandrake) method can also be
-used as an alternative to tSNE.
+used as an alternative to tSNE and UMAP.
 
 ### Accumulation curves
 
