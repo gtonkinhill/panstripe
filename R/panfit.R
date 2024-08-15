@@ -11,10 +11,11 @@
 #' @param boot_samples data.frame or tibble
 #' @param tree phylo
 #' @param pa matrix, data.frame or tibble
+#' @param anc_states branch level ancestral state matrix
 #' @return A panfit object
 #'
 new_panfit <- function(summary, model, data, boot_samples, 
-                       tree, pa){
+                       tree, pa, anc_states=NULL){
   
   stopifnot(any(class(summary) %in% c('NULL','tbl','data.frame')))
   stopifnot(any(class(model) %in% c('NULL','glm','glmmTMB')))
@@ -31,7 +32,8 @@ new_panfit <- function(summary, model, data, boot_samples,
         data = data,
         ci_samples=boot_samples,
         tree=tree,
-        pa=pa),
+        pa=pa,
+        anc_states=anc_states),
       class = "panfit"
     )
   )

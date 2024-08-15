@@ -17,6 +17,7 @@ panstripe(
   boot_type = "branch",
   conf = 0.95,
   boot_pvalue = FALSE,
+  return_anc_states = FALSE,
   quiet = FALSE
 )
 }
@@ -44,6 +45,8 @@ panstripe(
 \item{conf}{A scalar indicating the confidence level of the required intervals (default=0.95).}
 
 \item{boot_pvalue}{whether or not to calculate bootstrap p-values (default=FALSE)}
+
+\item{return_anc_states}{return the calculated branch level ancestral state matrix}
 
 \item{quiet}{whether to print progress information (default=FALSE)}
 }

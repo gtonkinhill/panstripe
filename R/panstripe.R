@@ -16,6 +16,7 @@
 #' @param boot_type whether to resample by 'branch', the default, or by 'gene'
 #' @param conf A scalar indicating the confidence level of the required intervals (default=0.95).
 #' @param boot_pvalue whether or not to calculate bootstrap p-values (default=FALSE)
+#' @param return_anc_states return the calculated branch level ancestral state matrix
 #' @param quiet whether to print progress information (default=FALSE)
 #'
 #' @return a panfit object with the resulting parameter estimates and bootstrap replicates
@@ -48,6 +49,7 @@ panstripe <- function(pa, tree,
                       boot_type='branch',
                       conf=0.95,
                       boot_pvalue=FALSE,
+                      return_anc_states=FALSE,
                       quiet=FALSE){
   
   #check inputs
@@ -193,6 +195,9 @@ panstripe <- function(pa, tree,
     boot_reps <- NULL
   }
   
+  if (!return_anc_states){
+    anc_states = NULL
+  }
   return(
     new_panfit(
       summary = s,
@@ -200,7 +205,8 @@ panstripe <- function(pa, tree,
       data = dat,
       boot_samples=boot_reps,
       tree=tree,
-      pa=pa
+      pa=pa,
+      anc_states=anc_states
     )
   )
 }

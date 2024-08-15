@@ -11,7 +11,7 @@ plot_tsne(pa, category = NULL, plot = TRUE, perplexity = 20, pcadims = 50)
 
 \item{category}{a factor vector which can be used to colour the points}
 
-\item{plot}{whether to return the plot or just the data.frame used for plotting (default=FALSE)}
+\item{plot}{whether to return the plot or just the data.frame used for plotting (default=TRUE)}
 
 \item{perplexity}{the `perplexity` argument passed to tSNE}
 

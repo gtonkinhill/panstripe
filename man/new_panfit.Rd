@@ -4,7 +4,7 @@
 \alias{new_panfit}
 \title{new_panfit}
 \usage{
-new_panfit(summary, model, data, boot_samples, tree, pa)
+new_panfit(summary, model, data, boot_samples, tree, pa, anc_states = NULL)
 }
 \arguments{
 \item{summary}{data.frame or tibble}
@@ -18,6 +18,8 @@ new_panfit(summary, model, data, boot_samples, tree, pa)
 \item{tree}{phylo}
 
 \item{pa}{matrix, data.frame or tibble}
+
+\item{anc_states}{branch level ancestral state matrix}
 }
 \value{
 A panfit object
