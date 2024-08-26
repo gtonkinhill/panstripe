@@ -63,8 +63,8 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", intercept=FALSE, mo
   
   # fit model
   if (family=='Tweedie'){
-    m <- panstripe:::fit_double_tweedie(model, dmodel=dmodel, data = dat)
-    a <- panstripe:::anova.dglm.basic(m, tweedie.power = m$p)
+    m <- fit_double_tweedie(model, dmodel=dmodel, data = dat)
+    a <- anova.dglm.basic(m, tweedie.power = m$p)
   } else {
     m <- stats::glm(model, dat, family = family)
   }
@@ -89,7 +89,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", intercept=FALSE, mo
   # run bootstrap
   if (nboot>1){
     if (family=='Tweedie'){
-      boot_reps <- boot::boot(dat, panstripe:::fit_double_model,
+      boot_reps <- boot::boot(dat, fit_double_model,
                               R = nboot,
                               stype='i',
                               strata=factor(dat$pangenome),
@@ -104,12 +104,12 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", intercept=FALSE, mo
     
     ci <- purrr::map_dfr(which(grepl('^[a-z]+:pangenome$', names(m$coefficients)) |
                                  grepl('^pangenome:[a-z]+', names(m$coefficients))), ~{
-      df <- as.data.frame(t(panstripe:::boot_ci_pval(boot_reps, index=.x, type=ci_type,
-                                             theta_null=0, ci_conf=conf,
-                                             transformation='identity', calc_pval = boot_pvalue)))
-      df$term <- gsub("[T:].*", "", names(m$coefficients)[[.x]])
-      return(df)
-    })
+                                   df <- as.data.frame(t(boot_ci_pval(boot_reps, index=.x, type=ci_type,
+                                                                                  theta_null=0, ci_conf=conf,
+                                                                                  transformation='identity', calc_pval = boot_pvalue)))
+                                   df$term <- gsub("pangenome:|:pangenome", "", names(m$coefficients)[[.x]])
+                                   return(df)
+                                 })
     
     s$`bootstrap CI 2.5%` <- signif(as.numeric(ci$V1[match(s$term, ci$term)]), 5)
     s$`bootstrap CI 97.5%` <- signif(as.numeric(ci$V2[match(s$term, ci$term)]), 5)
@@ -144,8 +144,8 @@ double_tweedie_llk <- function(p, model, dmodel, data){
 fit_double_tweedie <- function(model, dmodel, data){
   fm <- tryCatch(
     {
-      op <- stats::optimise(panstripe:::double_tweedie_llk, lower = 1.01, upper = 1.99, model=model, dmodel=dmodel, data=data)
-      tm <- panstripe:::dglm_mod(formula = model,  
+      op <- stats::optimise(double_tweedie_llk, lower = 1.01, upper = 1.99, model=model, dmodel=dmodel, data=data)
+      tm <- dglm_mod(formula = model,  
                      dformula =  dmodel,
                      data = data,
                      family = statmod::tweedie(var.power = op$minimum, link.power = 0), 
