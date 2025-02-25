@@ -13,6 +13,7 @@ plot_tree_pa(
   plot_titles = c("phylogeny", "gene presence/absence"),
   text_size = 14,
   label_genes = TRUE,
+  label_tips = TRUE,
   cols = NULL
 )
 }
@@ -33,6 +34,8 @@ plot_tree_pa(
 
 \item{label_genes}{whether to print the gene labels in the presence/absence matrix}
 
+\item{label_tips}{whether to print the tree tip labels}
+
 \item{cols}{colours for the gene presence/absence matrix. These will be recycled if #genes > #colours.}
 }
 \value{
@@ -45,6 +48,7 @@ Plots a phylogeny alongside a presence/absence matrix of user selected genes.
 
 sim <- simulate_pan(rate=1e-3)
 genes <- colnames(sim$pa)[which(apply(sim$pa, 2, sd)>0.2)]
-plot_tree_pa(sim$tree, sim$pa, genes=genes, label_genes=FALSE, cols='black')
+plot_tree_pa(sim$tree, sim$pa, genes=genes, 
+             label_genes=FALSE, label_tips=FALSE, cols='black')
 
 }

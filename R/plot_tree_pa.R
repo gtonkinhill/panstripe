@@ -12,6 +12,7 @@
 #' @param plot_titles the subplot titles (default=c('phylogeny', 'gene presence/absence'))
 #' @param text_size adjusts the size of text in the plot
 #' @param label_genes whether to print the gene labels in the presence/absence matrix
+#' @param label_tips whether to print the tree tip labels
 #' @param cols colours for the gene presence/absence matrix. These will be recycled if #genes > #colours.
 #'
 #' @return a patchwork object plotting the phylogeny alongside the gene presence/absence matrix
@@ -20,7 +21,8 @@
 #'
 #' sim <- simulate_pan(rate=1e-3)
 #' genes <- colnames(sim$pa)[which(apply(sim$pa, 2, sd)>0.2)]
-#' plot_tree_pa(sim$tree, sim$pa, genes=genes, label_genes=FALSE, cols='black')
+#' plot_tree_pa(sim$tree, sim$pa, genes=genes, 
+#'              label_genes=FALSE, label_tips=FALSE, cols='black')
 #'
 #' @export
 plot_tree_pa <- function(tree, pa, genes=colnames(pa), 
@@ -29,6 +31,7 @@ plot_tree_pa <- function(tree, pa, genes=colnames(pa),
                          plot_titles=c('phylogeny', 'gene presence/absence'),
                          text_size=14,
                          label_genes=TRUE,
+                         label_tips=TRUE,
                          cols=NULL){
   
   if (is.null(cols)){
@@ -42,13 +45,15 @@ plot_tree_pa <- function(tree, pa, genes=colnames(pa),
     ntips <- sum(tree$data$isTip)
   } else {
     if (!class(tree)=='phylo') stop('tree must be either a phylo or ggtree object!')
+    ttree <- tree
+    if(!label_tips){
+      ttree$tip.label <- rep(NA, length(ttree$tip.label)) 
+    }
     if (align){
-      ttree <- tree
-      ttree$tip.label <- rep(NA, length(ttree$tip.label))
       ggt <- ggtree::ggtree(ttree) + 
         ggtree::geom_tiplab(align=TRUE, col='grey')
     } else {
-      ggt <- ggtree::ggtree(tree)
+      ggt <- ggtree::ggtree(ttree)
     }
     ntips <- length(tree$tip.label)
   }
