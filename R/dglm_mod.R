@@ -321,7 +321,8 @@ dglm.constant <- function (y, family, weights = 1, tweedie.p=NULL)
   const
 }
 
-anova.dglm.basic <- function(object, tweedie.power){
+# Function taken from the dglm package by Peter Dunn and Gordon Smyth. Adapted to be callable by other functions.
+anova_dglm_basic <- function(object, tweedie.power){
   reduced <- dglm_mod(formula = object$formula, 
                         dformula = ~1, 
                         family = object$family, 

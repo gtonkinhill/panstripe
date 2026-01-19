@@ -8,6 +8,7 @@
 #' @param tree a phylogeny in 'phylo' format
 #' @param plot logical indicating whether to display the plot (default) or just return a `data.frame`
 #' @param text_size adjusts the size of text in the plot
+#' @param bin_width the width of the histogram bins
 #' @param color_pallete a number indicating which RColorBrewer palette to use
 #'
 #' @return a ggplot2 object

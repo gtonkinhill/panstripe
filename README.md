@@ -16,26 +16,23 @@ In particular it aims to replace the dubious but popular pangenome
 accumulation curve. The package is currently under development so
 frequent changes are to be expected.
 
--   <a href="#installation" id="toc-installation">Installation</a>
--   <a href="#quick-start" id="toc-quick-start">Quick Start</a>
--   <a href="#citation" id="toc-citation">Citation</a>
--   <a href="#comparing-pangenomes" id="toc-comparing-pangenomes">Comparing
-    Pangenomes</a>
--   <a href="#open-vs-closed" id="toc-open-vs-closed">Open vs Closed</a>
--   <a href="#rate-vs-size" id="toc-rate-vs-size">Rate vs Size</a>
--   <a href="#output" id="toc-output">Output</a>
--   <a href="#alternative-models" id="toc-alternative-models">Alternative
-    models</a>
--   <a href="#plots" id="toc-plots">Plots</a>
-    -   <a href="#pangenome-fit" id="toc-pangenome-fit">Pangenome fit</a>
-    -   <a href="#tree-with-presenceabsence"
-        id="toc-tree-with-presenceabsence">Tree with presence/absence</a>
-    -   <a href="#inferred-ancestral-states"
-        id="toc-inferred-ancestral-states">Inferred ancestral states</a>
-    -   <a href="#tsne" id="toc-tsne">tSNE</a>
-    -   <a href="#accumulation-curves" id="toc-accumulation-curves">Accumulation
-        curves</a>
-    -   <a href="#etymology" id="toc-etymology">Etymology</a>
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Citation](#citation)
+- [Comparing Pangenomes](#comparing-pangenomes)
+- [Open vs Closed](#open-vs-closed)
+- [Rate vs Size](#rate-vs-size)
+- [Output](#output)
+- [Alternative models](#alternative-models)
+- [Plots](#plots)
+  - [Pangenome fit](#pangenome-fit)
+  - [Tree with presence/absence](#tree-with-presenceabsence)
+  - [Inferred ancestral states](#inferred-ancestral-states)
+- [U-plot](#u-plot)
+  - [tSNE](#tsne)
+  - [UMAP](#umap)
+  - [Accumulation curves](#accumulation-curves)
+  - [Etymology](#etymology)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -84,14 +81,15 @@ tree <- read.tree(phylo.file.name)
 fit <- panstripe(pa, tree)
 fit$summary
 #> # A tibble: 6 × 7
-#>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
-#> 1 istip   1.49      0.282      5.29   8.03e- 7           0.978             1.99 
-#> 2 core    2.97      0.247     12.0    9.69e-21           2.54              3.54 
-#> 3 depth   0.0572    0.0619     0.923  3.58e- 1          -0.0859            0.162
-#> 4 isti…  -1.93      0.431     -4.48   2.10e- 5          -2.82             -1.18 
-#> 5 p       1.25     NA         NA     NA                  1.11              1.36 
-#> 6 phi     2.58     NA         NA     NA                  1.92              3.28
+#>   term       estimate std.error statistic   p.value `bootstrap CI 2.5%`
+#>   <chr>         <dbl>     <dbl>     <dbl>     <dbl>               <dbl>
+#> 1 istip        1.49      0.282      5.29   8.03e- 7              0.978 
+#> 2 core         2.97      0.247     12.0    9.69e-21              2.54  
+#> 3 depth        0.0572    0.0619     0.923  3.58e- 1             -0.0859
+#> 4 istip:core  -1.93      0.431     -4.48   2.10e- 5             -2.82  
+#> 5 p            1.25     NA         NA     NA                     1.11  
+#> 6 phi          2.58     NA         NA     NA                     1.92  
+#> # ℹ 1 more variable: `bootstrap CI 97.5%` <dbl>
 
 # Plot results
 plot_pangenome_params(fit)
@@ -154,12 +152,13 @@ fit_slow <- panstripe(sim_slow$pa, sim_slow$tree)
 result <- compare_pangenomes(fit_fast, fit_slow)
 result$summary
 #> # A tibble: 4 × 7
-#>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth    -0.0578    0.0268    -2.16  3.14e-2           -0.108          -0.0148
-#> 2 istip    -0.0464    0.173     -0.268 7.88e-1           -0.266           0.323 
-#> 3 core     -0.683     0.165     -4.15  3.74e-5           -0.972          -0.345 
-#> 4 disper…  NA        NA          0.439 5.08e-1           NA              NA
+#>   term             estimate std.error statistic   p.value `bootstrap CI 2.5%`
+#>   <chr>               <dbl>     <dbl>     <dbl>     <dbl>               <dbl>
+#> 1 depth             -0.0578    0.0268    -2.16  0.0314                 -0.108
+#> 2 istip             -0.0464    0.173     -0.268 0.788                  -0.266
+#> 3 core              -0.683     0.165     -4.15  0.0000374              -0.972
+#> 4 dispersion model  NA        NA          0.439 0.508                  NA    
+#> # ℹ 1 more variable: `bootstrap CI 97.5%` <dbl>
 ```
 
 A significant p-value for the `tip` term indicates that the two
@@ -212,14 +211,15 @@ fit_closed <- panstripe(sim_closed$pa, sim_closed$tree)
 
 fit_closed$summary
 #> # A tibble: 6 × 7
-#>   term  estimate std.error statistic   p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>    <dbl>     <dbl>     <dbl>     <dbl>            <dbl>            <dbl>
-#> 1 istip  1.53e+0   1.43e-1   10.7     3.09e-21            1.13            1.90  
-#> 2 core  -7.23e+2   3.80e+4   -0.0190  9.85e- 1         -783.           -492.    
-#> 3 depth -4.52e-2   3.74e-2   -1.21    2.29e- 1           -0.145           0.0549
-#> 4 isti…  7.23e+2   3.80e+4    0.0190  9.85e- 1          493.            784.    
-#> 5 p      1.05e+0  NA         NA      NA                   1.00            1.44  
-#> 6 phi    3.99e-1  NA         NA      NA                   0.199           0.525
+#>   term        estimate  std.error statistic   p.value `bootstrap CI 2.5%`
+#>   <chr>          <dbl>      <dbl>     <dbl>     <dbl>               <dbl>
+#> 1 istip         1.53       0.143    10.7     3.09e-21               1.13 
+#> 2 core       -723.     38024.       -0.0190  9.85e- 1            -783.   
+#> 3 depth        -0.0452     0.0374   -1.21    2.29e- 1              -0.145
+#> 4 istip:core  723.     38024.        0.0190  9.85e- 1             493.   
+#> 5 p             1.05      NA        NA      NA                      1.00 
+#> 6 phi           0.399     NA        NA      NA                      0.199
+#> # ℹ 1 more variable: `bootstrap CI 97.5%` <dbl>
 ```
 
 The p-value indicates that there is not a significant association
@@ -252,12 +252,13 @@ fit_small <- panstripe(sim_small$pa, sim_small$tree)
 result <- compare_pangenomes(fit_large, fit_small)
 result$summary
 #> # A tibble: 4 × 7
-#>   term    estimate std.error statistic p.value `bootstrap CI …` `bootstrap CI …`
-#>   <chr>      <dbl>     <dbl>     <dbl>   <dbl>            <dbl>            <dbl>
-#> 1 depth     0.0858    0.0490     1.75   0.0807          -0.0169            0.201
-#> 2 istip    -0.181     0.297     -0.609  0.543           -0.739             0.394
-#> 3 core     -0.365     0.226     -1.62   0.106           -0.889             0.121
-#> 4 disper…  NA        NA          6.14   0.0132          NA                NA
+#>   term             estimate std.error statistic p.value `bootstrap CI 2.5%`
+#>   <chr>               <dbl>     <dbl>     <dbl>   <dbl>               <dbl>
+#> 1 depth              0.0858    0.0490     1.75   0.0807             -0.0169
+#> 2 istip             -0.181     0.297     -0.609  0.543              -0.739 
+#> 3 core              -0.365     0.226     -1.62   0.106              -0.889 
+#> 4 dispersion model  NA        NA          6.14   0.0132             NA     
+#> # ℹ 1 more variable: `bootstrap CI 97.5%` <dbl>
 ```
 
 ## Output
@@ -271,23 +272,22 @@ p-values and bootstrap confidence intervals can be used to determine
 whether each term in the model is significantly associated with gene
 gain and loss.
 
--   **core** indicates whether the branch lengths in the phylogeny are
-    associated with gene gain and loss.
+- **core** indicates whether the branch lengths in the phylogeny are
+  associated with gene gain and loss.
 
--   **tip** indicates associations with genes observed to occur on the
-    tips of the phylogeny. These are usually driven by a combination of
-    annotation errors and depending upon the temporal sampling density
-    also highly mobile elements that are not observed in multiple
-    genomes.
+- **tip** indicates associations with genes observed to occur on the
+  tips of the phylogeny. These are usually driven by a combination of
+  annotation errors and depending upon the temporal sampling density
+  also highly mobile elements that are not observed in multiple genomes.
 
--   **depth** indicates whether the rate of gene gain and loss changes
-    significantly with the depth of a branch. Typically, our ability to
-    detect gene exchange events reduces for older ancestral branches.
+- **depth** indicates whether the rate of gene gain and loss changes
+  significantly with the depth of a branch. Typically, our ability to
+  detect gene exchange events reduces for older ancestral branches.
 
--   **p** the inferred index parameter of the underlying Tweedie
-    distribution used in the GLM
+- **p** the inferred index parameter of the underlying Tweedie
+  distribution used in the GLM
 
--   **phi** the inferred dispersion parameter of the GLM
+- **phi** the inferred dispersion parameter of the GLM
 
 #### model
 
@@ -417,6 +417,28 @@ plot_gain_loss(fit)
 
 ![](inst/vignette-supp/unnamed-chunk-16-1.png)<!-- -->
 
+## U-plot
+
+The classic pangenome ‘U-plot’ of gene frequencies. It also includes the
+option of providing a phylogeny to account for the underlying population
+structure of the genomes. Thus, genomes that are more closely related
+will contribute less to the frequency counts.
+
+``` r
+# Standard U-plot
+plot_u(pa)
+```
+
+![](inst/vignette-supp/unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+
+# Weighted by core genome phylogeny
+plot_u(pa, tree)
+```
+
+![](inst/vignette-supp/unnamed-chunk-17-2.png)<!-- -->
+
 ### tSNE
 
 The tSNE dimension reduction technique can be used to investigate
@@ -426,10 +448,21 @@ evidence for clusters within the pangenome.
 plot_tsne(pa)
 ```
 
-![](inst/vignette-supp/unnamed-chunk-17-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-18-1.png)<!-- -->
+
+### UMAP
+
+The UMAP dimension reduction technique is supported as well to
+investigate clustering within the pangenome.
+
+``` r
+plot_umap(pa)
+```
+
+![](inst/vignette-supp/unnamed-chunk-19-1.png)<!-- -->
 
 The [Mandrake](https://github.com/johnlees/mandrake) method can also be
-used as an alternative to tSNE.
+used as an alternative to tSNE and UMAP.
 
 ### Accumulation curves
 
@@ -442,7 +475,7 @@ compare methods.
 plot_acc(list(fast = sim_fast$pa, slow = sim_slow$pa))
 ```
 
-![](inst/vignette-supp/unnamed-chunk-18-1.png)<!-- -->
+![](inst/vignette-supp/unnamed-chunk-20-1.png)<!-- -->
 
 ### Etymology
 

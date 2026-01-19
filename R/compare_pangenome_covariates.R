@@ -72,7 +72,7 @@ compare_pangenome_covariates <- function(fits, covariates, family='Tweedie', kee
   
   if (family=="Tweedie"){
     m <- fit_double_tweedie(model = model, data = dat, dmodel = dmodel)
-    a <- anova.dglm.basic(m, tweedie.power = m$p)
+    a <- anova_dglm_basic(m, tweedie.power = m$p)
   } else {
     m <- stats::glm(model, dat, family = family)
   }

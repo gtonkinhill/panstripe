@@ -64,7 +64,7 @@ compare_pangenomes <- function(fitA, fitB, family="Tweedie", intercept=FALSE, mo
   # fit model
   if (family=='Tweedie'){
     m <- fit_double_tweedie(model, dmodel=dmodel, data = dat)
-    a <- anova.dglm.basic(m, tweedie.power = m$p)
+    a <- anova_dglm_basic(m, tweedie.power = m$p)
   } else {
     m <- stats::glm(model, dat, family = family)
   }

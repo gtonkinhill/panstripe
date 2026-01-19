@@ -4,20 +4,16 @@
 \alias{sfreemap}
 \title{sfreemap}
 \usage{
-sfreemap(tree, pa, type = "standard", model = "ER", quiet = FALSE)
+sfreemap(tree, pa, model = "ER", quiet = FALSE)
 }
 \arguments{
-\item{tree}{}
+\item{tree}{tree}
 
-\item{pa}{}
+\item{pa}{gene presence/absence matrix}
 
-\item{type}{}
+\item{model}{model}
 
-\item{model}{}
-
-\item{method}{}
-
-\item{tol}{}
+\item{quiet}{turn off messages (FALSE)}
 }
 \value{
 result

@@ -4,13 +4,10 @@
 #' 
 #' @description This function has been adapted and simplified from the code in the sfreemap R package (https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1554-7).
 #'
-#' @param tree 
-#' @param pa 
-#' @param type 
-#' @param model 
-#' @param method 
-#' @param prior
-#' @param tol
+#' @param tree tree
+#' @param pa gene presence/absence matrix
+#' @param model model
+#' @param quiet turn off messages (FALSE)
 #'
 #' @return result
 #'
@@ -22,7 +19,7 @@
 #' sfreemap(tree, pa)
 #' }
 #'
-sfreemap <- function(tree, pa, type="standard", model="ER", quiet=FALSE){
+sfreemap <- function(tree, pa, model="ER", quiet=FALSE){
   
   # Reorder the tree so the root is the first row of the matrix.
   # We save the original order to make sure we have the result

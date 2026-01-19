@@ -259,6 +259,18 @@ The `plot_gain_loss` function allows for the visualisation of the fitted gene ga
 plot_gain_loss(fit)
 ```
 
+## U-plot
+
+The classic pangenome 'U-plot' of gene frequencies. It also includes the option of providing a phylogeny to account for the underlying population structure of the genomes. Thus, genomes that are more closely related will contribute less to the frequency counts.
+
+```{r}
+# Standard U-plot
+plot_u(pa)
+
+#Weighted by core genome phylogeny
+plot_u(pa, tree)
+```
+
 ### tSNE
 
 The tSNE dimension reduction technique can be used to investigate evidence for clusters within the pangenome.
@@ -267,7 +279,15 @@ The tSNE dimension reduction technique can be used to investigate evidence for c
 plot_tsne(pa)
 ```
 
-The [Mandrake](https://github.com/johnlees/mandrake) method can also be used as an alternative to tSNE.
+### UMAP
+
+The UMAP dimension reduction technique is supported as well to investigate clustering within the pangenome.
+
+```{r}
+plot_umap(pa)
+```
+
+The [Mandrake](https://github.com/johnlees/mandrake) method can also be used as an alternative to tSNE and UMAP.
 
 ### Accumulation curves
 
